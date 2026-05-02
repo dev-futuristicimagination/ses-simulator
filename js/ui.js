@@ -1,4 +1,4 @@
-﻿const UI={modal:null,selCase:null,selEng:null,selCand:null,
+const UI={modal:null,selCase:null,selEng:null,selCand:null,
 render(game){const s=game.state,app=document.getElementById("app");app.innerHTML="";
 try{switch(s.phase){
 case"title":app.innerHTML=this.title();this.bTitle(game);break;
@@ -22,9 +22,41 @@ title(){return`<div class="screen title-screen">
 <div class="title-feature-card"><div class="tfc-icon">\ud83c\udfaf</div><div class="tfc-label">\u5e74\u5546\uff11\u5104</div><div class="tfc-desc">\u30de\u30fc\u30b8\u30f3\u69cb\u9020\u3092\u7406\u89e3\u3057\u3066\u9054\u6210\u305b\u3088</div></div>
 </div>
 <button id="btn-start" class="btn btn-primary btn-xl">\u25b6 \u30b2\u30fc\u30e0\u30b9\u30bf\u30fc\u30c8</button>
-<p style="font-size:.72rem;color:var(--muted);margin-top:12px">\u5c31\u6d3b\u30fb\u8ee2\u8077\u30fbSES\u696d\u754c\u3092\u77e5\u308b\u3059\u3079\u3066\u306e\u4eba\u3078</p>
+<div id="save-load-area" style="margin-top:12px;display:flex;gap:10px;justify-content:center"></div>
+<p style="font-size:.72rem;color:var(--muted);margin-top:10px">\u5c31\u6d3b\u30fb\u8ee2\u8077\u30fbSES\u696d\u754c\u3092\u77e5\u308b\u3059\u3079\u3066\u306e\u4eba\u3078</p>
 </div>`},
-bTitle(game){document.getElementById("btn-start").onclick=()=>{Sound.play("click");game.state.phase="setup-role";this.render(game);}},
+bTitle(game){
+  document.getElementById('btn-start').onclick=()=>{Sound.play('click');game.state.phase='setup-role';this.render(game);};
+  // セーブデータがあれば「続きから」ボタンを表示
+  const area=document.getElementById('save-load-area');
+  if(area&&game.hasSaveData()){
+    try{
+      const raw=localStorage.getItem('ses_save');
+      const meta=raw?JSON.parse(raw):null;
+      const savedAt=meta?._savedAt?new Date(meta._savedAt).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+      const info=meta?`${meta.companyName||'SES会社'} ${meta.year||1}年${meta.month||1}月 • ${savedAt}`:'';
+      area.innerHTML=`
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:100%">
+          <div style="font-size:11px;color:var(--muted)">\ud83d\udcbe セ\u30fc\u30d6デ\u30fc\u30bf: ${info}</div>
+          <div style="display:flex;gap:8px">
+            <button id="btn-load" class="btn btn-success" style="padding:8px 20px">▶ 続きからプレイ</button>
+            <button id="btn-delete-save" class="btn btn-ghost" style="padding:8px 14px;font-size:11px;color:#e94560;border-color:rgba(233,69,96,0.3)">× データ削除</button>
+          </div>
+        </div>`;
+      document.getElementById('btn-load').onclick=()=>{
+        const r=game.loadGame();
+        if(r.ok){Sound.play('success');this.render(game);}
+        else{Sound.play('warn');alert('読み込み失敗: '+r.msg);}
+      };
+      document.getElementById('btn-delete-save').onclick=()=>{
+        if(!confirm('セーブデータを削除しますか？'))return;
+        game.deleteSave();
+        Sound.play('click');
+        this.render(game);
+      };
+    }catch(e){}
+  }
+},
 bcDots(step,total){return Array.from({length:total},(_,i)=>`<div class="bc-dot${i<step?" filled":""}"></div>`).join("")},
 sRole(game){const c=Object.entries(ROLES).map(([id,r])=>`<div class="setup-big-card" data-role="${id}"><div class="sbc-icon">${r.icon}</div><div class="sbc-name">${r.name}</div><div class="sbc-desc">${r.desc}</div><div class="sbc-stats"><div class="sbc-stat${id==="ceo"?" good":""}"><span class="sv">${r.actionsPerMonth}</span><span class="sl">アクション/月</span></div><div class="sbc-stat${id==="engineer-ceo"?" good":" muted"}"><span class="sv">${id==="engineer-ceo"?"¥70万":"¥0"}</span><span class="sl">初期月収</span></div></div></div>`).join("");
 return`<div class="screen"><div class="setup-screen"><div class="setup-breadcrumb">${this.bcDots(1,4)}</div><div class="setup-step-label">STEP 1 / 4</div><h2 class="setup-heading">あなたは誰？</h2><p class="setup-desc">スタート時の役割でゲームスタイルが変わります</p><div class="setup-big-grid">${c}</div><div class="setup-nav"><div></div><button id="btn-role-next" class="btn btn-primary" disabled>次へ →</button></div></div></div>`},
@@ -444,24 +476,67 @@ const ab=document.getElementById("btn-assign-confirm");if(ab){document.querySele
     },350);
   },1800);
 };}},mEnd(game){const s=game.state,sum=s.monthEndSummary,profit=sum.revenue-sum.expenses;
+// 財務グラフ生成
+const hist=s.finHistory||[];
+const finGraph=(()=>{
+  if(hist.length<2) return `<div style="color:var(--muted);font-size:11px;text-align:center;padding:8px">\u30b0\u30e9\u30d5\u306f2\u30f6\u6708\u76ee\u304b\u3089\u8868\u793a\u3055\u308c\u307e\u3059</div>`;
+  const W=340,H=90,pad=30;
+  const maxAbs=Math.max(...hist.map(h=>Math.max(Math.abs(h.revenue||0),Math.abs(h.expenses||0))),1);
+  const yScale=(H-10)/maxAbs;
+  // ゼロライン
+  const zeroY=H-4;
+  const xStep=(W-pad*2)/Math.max(hist.length-1,1);
+  // 売上折れ線
+  const rPts=hist.map((h,i)=>`${pad+i*xStep},${zeroY-(h.revenue||0)*yScale}`).join(' ');
+  // 損益折れ線
+  const pPts=hist.map((h,i)=>{
+    const py=zeroY-(h.profit||0)*yScale;
+    return `${pad+i*xStep},${Math.max(2,Math.min(H-2,py)}`;
+  }).join(' ');
+  // 最新月のラベル
+  const lastH=hist[hist.length-1];
+  const lastPY=Math.max(2,Math.min(H-2,zeroY-(lastH.profit||0)*yScale));
+  const lastRY=Math.max(2,Math.min(H-2,zeroY-(lastH.revenue||0)*yScale));
+  const profitColor=lastH.profit>=0?'#00d4aa':'#e94560';
+  return `<div style="margin:12px 0 4px">
+<svg width="${W}" height="${H}" style="overflow:visible;display:block;margin:0 auto">
+  <defs>
+    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7ab8f5" stop-opacity="0.7"/><stop offset="100%" stop-color="#7ab8f5" stop-opacity="0.05"/></linearGradient>
+  </defs>
+  <!-- ゼロライン -->
+  <line x1="${pad}" y1="${zeroY}" x2="${W-pad}" y2="${zeroY}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="3,3"/>
+  <!-- 売上エリア -->
+  <polyline points="${rPts}" fill="none" stroke="#7ab8f5" stroke-width="1.5" opacity="0.7"/>
+  <!-- 損益折れ線 -->
+  <polyline points="${pPts})" fill="none" stroke="${profitColor}" stroke-width="2"/>
+  <!-- 最新値ドット -->
+  <circle cx="${pad+(hist.length-1)*xStep}" cy="${lastPY}" r="3.5" fill="${profitColor}"/>
+  <circle cx="${pad+(hist.length-1)*xStep}" cy="${lastRY}" r="2.5" fill="#7ab8f5"/>
+</svg>
+<div style="display:flex;gap:14px;justify-content:center;font-size:10px;color:var(--muted);margin-top:2px">
+  <span><span style="color:#7ab8f5">\u2014</span> \u58f2\u4e0a</span>
+  <span><span style="color:${profitColor}">\u2014</span> \u640d\u76ca</span>
+</div></div>`;
+})();
 return`<div class="screen" style="background:#060812"><div class="month-end-card">
 <div class="me-label">MONTHLY REPORT</div>
-<div class="me-heading">${s.year}年${this.m(s.month)} 月次決算</div>
+<div class="me-heading">${s.year}\u5e74${this.m(s.month)} \u6708\u6b21\u6c7a\u7b97</div>
+${finGraph}
 <div class="pnl">
-<div class="pnl-r"><span>売上（案件）</span><span class="pos">+ ¥${Math.round(sum.revenue/10000)}万</span></div>
-<div class="pnl-r"><span>エンジニア給与</span><span class="neg">− ¥${Math.round(sum.totalSalary/10000)}万</span></div>
-<div class="pnl-r"><span>社会保険（15%）</span><span class="neg">− ¥${Math.round(sum.socialIns/10000)}万</span></div>
-<div class="pnl-r"><span>オフィス賃料</span><span class="neg">− ¥${Math.round(sum.rent/10000)}万</span></div>
-${s.bankRepayment>0?`<div class="pnl-r"><span>銀行返済</span><span class="neg">− ¥${Math.round(s.bankRepayment/10000)}万</span></div>`:""}
-<div class="pnl-r pnl-total"><span>月次損益</span><span class="${profit>=0?"pos":"neg"}">${profit>=0?"＋":"－"} ¥${Math.round(Math.abs(profit)/10000)}万</span></div>
+<div class="pnl-r"><span>\u58f2\u4e0a\uff08\u6848\u4ef6\uff09</span><span class="pos">+ \xa5${Math.round(sum.revenue/10000)}\u4e07</span></div>
+<div class="pnl-r"><span>\u30a8\u30f3\u30b8\u30cb\u30a2\u7d66\u4e0e</span><span class="neg">\u2212 \xa5${Math.round(sum.totalSalary/10000)}\u4e07</span></div>
+<div class="pnl-r"><span>\u793e\u4f1a\u4fdd\u967a\uff0815%\uff09</span><span class="neg">\u2212 \xa5${Math.round(sum.socialIns/10000)}\u4e07</span></div>
+<div class="pnl-r"><span>\u30aa\u30d5\u30a3\u30b9\u8cce\u6599</span><span class="neg">\u2212 \xa5${Math.round(sum.rent/10000)}\u4e07</span></div>
+${s.bankRepayment>0?`<div class="pnl-r"><span>\u9280\u884c\u8fd4\u6e08</span><span class="neg">\u2212 \xa5${Math.round(s.bankRepayment/10000)}\u4e07</span></div>`:""}
+<div class="pnl-r pnl-total"><span>\u6708\u6b21\u640d\u76ca</span><span class="${profit>=0?"pos":"neg"}">${profit>=0?"\uff0b":"\uff0d"} \xa5${Math.round(Math.abs(profit)/10000)}\u4e07</span></div>
 </div>
-${profit<0?`<div class="me-warn">⚠ 今月は赤字です</div>`:""}
-${sum.bankrupt?`<div class="me-warn">💀 資金ゼロで倒産</div>`:""}
+${profit<0?`<div class="me-warn">\u26a0 \u4eca\u6708\u306f\u8d64\u5b57\u3067\u3059</div>`:""}
+${sum.bankrupt?`<div class="me-warn">\ud83d\udc80 \u8cc7\u91d1\u30bc\u30ed\u3067\u5012\u7523</div>`:""}
 <div class="me-actions">
-${sum.bankrupt?`<button id="btn-gameover" class="btn btn-primary">結果を見る</button>`:sum.contractReviews&&sum.contractReviews.length>0?`<button id="btn-contract-review" class="btn btn-primary" style="background:linear-gradient(135deg,#f7971e,#ffd200);color:#111">📋 契約更新確認 (${sum.contractReviews.length}件) →</button>`:s.pendingEvent?`<button id="btn-show-event" class="btn btn-primary" style="background:linear-gradient(135deg,#e94560,#c0392b)">⚡ イベント発生！</button>`:`<button id="btn-next-month" class="btn btn-success">来月へ →</button>`}
+${sum.bankrupt?`<button id="btn-gameover" class="btn btn-primary">\u7d50\u679c\u3092\u898b\u308b</button>`:sum.contractReviews&&sum.contractReviews.length>0?`<button id="btn-contract-review" class="btn btn-primary" style="background:linear-gradient(135deg,#f7971e,#ffd200);color:#111">\ud83d\udccb \u5951\u7d04\u66f4\u65b0\u78ba\u8a8d (${sum.contractReviews.length}\u4ef6) \u2192</button>`:s.pendingEvent?`<button id="btn-show-event" class="btn btn-primary" style="background:linear-gradient(135deg,#e94560,#c0392b)">\u26a1 \u30a4\u30d9\u30f3\u30c8\u767a\u751f\uff01</button>`:`<button id="btn-next-month" class="btn btn-success">\u6765\u6708\u3078 \u2192</button>`}
 </div></div></div>`},
 bMEnd(game){const s=game.state,sum=s.monthEndSummary;
-const nx=document.getElementById("btn-next-month");if(nx)nx.onclick=()=>{Sound.play("next");game.nextMonth();this.render(game);};
+const nx=document.getElementById("btn-next-month");if(nx)nx.onclick=()=>{Sound.play("next");game.nextMonth();const _sv=game.saveGame();if(!_sv.ok)console.warn('\u30bb\u30fc\u30d6\u5931\u6557:',_sv.msg);this.render(game);};
 const go=document.getElementById("btn-gameover");if(go)go.onclick=()=>{Sound.play("defeat");s.phase="bankrupt";this.render(game);};
 const ev=document.getElementById("btn-show-event");if(ev)ev.onclick=()=>{Sound.play("alert");document.getElementById("app").innerHTML=this.evScreen(s.pendingEvent,game);this.bEvScreen(game);};
 const cr=document.getElementById("btn-contract-review");

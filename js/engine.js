@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // engine.js - ゲームロジック
 // ============================================================
 
@@ -36,6 +36,8 @@ class SESGame {
       seenEducation: new Set(),
       hiringChannel: null,
       hiringCandidates: [],
+      // ─── 財務グラフ用履歴 ───
+      finHistory: [],  // [{month, year, revenue, expenses, profit, headcount}]
     };
   }
 
@@ -661,13 +663,37 @@ class SESGame {
     st.educationCostThisMonth = 0;
     st.snsPostsThisMonth = 0;
 
+    // ─── 財務履歴を記録（グラフ用）───
+    const headcount = st.engineers.filter(e=>e.status!=='gone').length;
+    st.finHistory = st.finHistory || [];
+    st.finHistory.push({
+      month: st.month, year: st.year,
+      revenue, expenses, profit,
+      headcount
+    });
+    // 最大60ヶ月分保持
+    if (st.finHistory.length > 60) st.finHistory.shift();
 
     // Grant pending dispatch license
     if (st.licenseApplied && !st.hasDispatchLicense) {
       st.hasDispatchLicense = true;
       st.licenseApplied = false;
-      this.addLog('good', '✅ 派遣業許可が正式に交付されました！派遣契約案件を受注できます。');
+      this.addLog('good', '\u2705 \u6d3e\u9063\u696d\u8a31\u53ef\u304c\u6b63\u5f0f\u306b\u4ea4\u4ed8\u3055\u308c\u307e\u3057\u305f\uff01\u6d3e\u9063\u5951\u7d04\u6848\u4ef6\u3092\u53d7\u6ce8\u3067\u304d\u307e\u3059\u3002');
     }
+
+    // ─── 不満度100%自動退職チェック ───
+    const autoFired = [];
+    st.engineers.filter(e=>e.status!=='gone'&&!e.isSelf&&(e.dissatisfaction||0)>=100).forEach(e => {
+      // 稼働中なら案件も終了
+      const cas = st.activeCases.find(c=>c.assignedEngineerId===e.id);
+      if (cas) {
+        st.activeCases = st.activeCases.filter(c=>c.id!==cas.id);
+        st.brandPoints = Math.max(0, (st.brandPoints||0) - 8);
+      }
+      e.status = 'gone';
+      autoFired.push(e.name);
+      this.addLog('bad', `\ud83d\udea8 ${e.name}\u304c\u4e0d\u6e80\u7206\u767a\uff01\u7a81\u7136\u9000\u8077\u3057\u307e\u3057\u305f\u3002\uff08\u4e0d\u6e80\u5ea6100%\uff09`);
+    });
 
     // Update dissatisfaction & stress
     st.engineers.filter(e=>e.status!=='gone'&&!e.isSelf).forEach(e => {
@@ -1035,6 +1061,48 @@ class SESGame {
     const st = this.state;
     st.log.unshift({ type, msg, month: st.month, year: st.year });
     if (st.log.length > 50) st.log.pop();
+  }
+
+  // ─── SAVE / LOAD ───
+  saveGame() {
+    try {
+      const st = this.state;
+      const data = JSON.stringify({
+        ...st,
+        seenEducation: Array.from(st.seenEducation || []),
+        _savedAt: new Date().toISOString(),
+        _version: 3
+      });
+      localStorage.setItem('ses_save', data);
+      return { ok: true };
+    } catch(e) {
+      return { ok: false, msg: e.message };
+    }
+  }
+
+  loadGame() {
+    try {
+      const raw = localStorage.getItem('ses_save');
+      if (!raw) return { ok: false, msg: '\u30bb\u30fc\u30d6\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093' };
+      const data = JSON.parse(raw);
+      if (!data._version) return { ok: false, msg: '\u53e4\u3044\u30c7\u30fc\u30bf\u306f\u8aad\u307f\u8fbc\u3081\u307e\u305b\u3093' };
+      // seenEducation を Set に戻す
+      data.seenEducation = new Set(Array.isArray(data.seenEducation) ? data.seenEducation : []);
+      // finHistory が無ければ初期化
+      data.finHistory = data.finHistory || [];
+      this.state = data;
+      return { ok: true, savedAt: data._savedAt };
+    } catch(e) {
+      return { ok: false, msg: e.message };
+    }
+  }
+
+  hasSaveData() {
+    return !!localStorage.getItem('ses_save');
+  }
+
+  deleteSave() {
+    localStorage.removeItem('ses_save');
   }
 }
 
