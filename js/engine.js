@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // engine.js - ゲームロジック
 // ============================================================
 
@@ -377,12 +377,16 @@ class SESGame {
     const mPool = matchPool.length > 0 ? matchPool : workPool;
 
     // Match probability by channel quality: 0→15%, 1→25%, 2→35%, 3→60%, 4→75%, 5→92%
-    const matchBias = [0.15, 0.25, 0.35, 0.60, 0.75, 0.92][Math.min(ch.quality, 5)];
+    // 有料チャンネル(quality>=3)且つ案件ありの場合、スキルマッチ確率を強化
+    const baseMatchBias = [0.15, 0.25, 0.35, 0.60, 0.75, 0.92][Math.min(ch.quality, 5)];
+    const matchBias = (ch.quality >= 3 && neededTags.size > 0 && matchPool.length > 0)
+      ? Math.min(0.95, baseMatchBias + 0.22)
+      : baseMatchBias;
 
     // Build candidate list with match bias
     const selected = [];
     const usedTypes = new Set();
-    for (let i = 0; i < actualCount * 4 && selected.length < actualCount; i++) {
+    for (let i = 0; i < actualCount * 5 && selected.length < actualCount; i++) {
       const useMatch = Math.random() < matchBias;
       const pool = useMatch ? mPool : workPool;
       const tpl = pool[Math.floor(Math.random() * pool.length)];

@@ -1,4 +1,4 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
+﻿* { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
   --bg: #0a0a14;
@@ -943,3 +943,6 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
 .csb-btn:hover:not(.active){background:rgba(255,255,255,.06);}
 /* ─── 採用探索スピナー ─── */
 @keyframes spin { to { transform: rotate(360deg); } }
+/* == 交流会・展示会ボタン == */
+.gh-act-btn.network:hover { background:rgba(255,165,0,.15); border-color:rgba(255,165,0,.4); }
+.gh-act-btn.exhibition:hover { background:rgba(167,139,250,.12); border-color:rgba(167,139,250,.4); }

@@ -1,4 +1,4 @@
-const UI={modal:null,selCase:null,selEng:null,selCand:null,
+﻿const UI={modal:null,selCase:null,selEng:null,selCand:null,
 render(game){const s=game.state,app=document.getElementById("app");app.innerHTML="";
 try{switch(s.phase){
 case"title":app.innerHTML=this.title();this.bTitle(game);break;
@@ -97,11 +97,13 @@ return`<div class="game-layout">
 <div class="gh-progress"><div class="gp-label"><span>年商1億目標</span><span class="gp-pct ${prog>=75?'gp-near':prog>=50?'gp-half':''}">${prog}%</span></div><div class="gp-bar"><div class="gp-fill" style="width:${prog}%"></div></div></div>
 </div>
 <div class="gh-actions">
-<button id="btn-do-sales" class="gh-act-btn sales" title="アクション1消費">📣<span>営業</span></button>
-<button id="btn-cloud-work" class="gh-act-btn cloud" title="クラウドソーシング">💻<span>クラウド</span></button>
-<button id="btn-sns-post" class="gh-act-btn sns" title="SNS投稿（2回/月）">📢<span>SNS</span></button>
-<button id="btn-blog-post" class="gh-act-btn blog" title="ブログ記事">✍<span>ブログ</span></button>
-<button id="btn-tech-train" class="gh-act-btn tech" title="全エンジニア技術研修 ¥30万">🔬<span>技術研修</span></button>
+<button id="btn-do-sales" class="gh-act-btn sales" title="\u55b6\u696d\u30a2\u30af\u30b7\u30e7\u30f3\uff081\u6d88\u8cbb\uff09">📣<span>\u55b6\u696d</span></button>
+<button id="btn-cloud-work" class="gh-act-btn cloud" title="\u30af\u30e9\u30a6\u30c9\u30bd\u30fc\u30b7\u30f3\u30b0">💻<span>\u30af\u30e9\u30a6\u30c9</span></button>
+<button id="btn-sns-post" class="gh-act-btn sns" title="SNS\u6295\u7a3f\uff082\u56de/\u6708\uff09\u2022\u30d0\u30ba\u308b\u304b\u3069\u3046\u304b">📢<span>SNS</span></button>
+<button id="btn-blog-post" class="gh-act-btn blog" title="\u30d6\u30ed\u30b0\u8a18\u4e8b\u2022\u6280\u8853\u529b\u9ad8\u3044\u307b\u3069\u53cd\u97ff\u5927">✍<span>\u30d6\u30ed\u30b0</span></button>
+<button id="btn-network" class="gh-act-btn network" title="\u696d\u754c\u4ea4\u6d41\u4f1a\u30fb\u98f2\u307f\u4f1a\uff085\u4e07\u5186\uff09">🍺<span>\u4ea4\u6d41\u4f1a</span></button>
+<button id="btn-exhibition" class="gh-act-btn exhibition" title="\u5c55\u793a\u4f1a\u30fb\u540d\u523a\u4ea4\u63db\uff083\u4e07\u5186\uff09">💼<span>\u5c55\u793a\u4f1a</span></button>
+<button id="btn-tech-train" class="gh-act-btn tech" title="\u5168\u30a8\u30f3\u30b8\u30cb\u30a2\u6280\u8853\u7814\u4fee\u300030\u4e07\u5186">🔬<span>\u6280\u8853\u7814\u4fee</span></button>
 </div>
 </header>
 <div class="game-body">
@@ -213,7 +215,7 @@ const items=s.hiringCandidates.length===0?`<div class="empty-state" style="paddi
 const tags=(c.skillTags||[]).map(t=>`<span class="cand-tag">${t}</span>`).join("");
 const casesCanDo=(s.availableCases||[]).filter(cas=>c.skill>=(cas.requiredSkill||1)&&((cas.requiredTags||[]).length===0||(c.skillTags||[]).some(t=>(cas.requiredTags||[]).includes(t))));
 const caseMatch=casesCanDo.length>0?`<div class="cand-case-match">📋 今月の案件 ${casesCanDo.length}件に対応可能</div>`:`<div class="cand-case-match warn">⚠ 今月の案件に対応できるものがありません</div>`;
-return`<div class="cand-card ${c.negotiationResult==='refused'?'refused':''}" data-cid="${c.id}"><div class="cand-portrait">${Portrait.generate(c)}</div><div class="cand-info"><div class="cand-name">${c.name} <span class="cand-age">${c.age||"?"}歳</span></div><div class="cand-type">${c.typeName} / 経験${c.exp}年 / ${"★".repeat(c.skill)}</div><div class="cand-tags">${tags}</div><div class="cand-nums"><span class="cn blue">希望¥${Math.round(c.salaryAsk/10000)}万</span><span class="cn muted">最低¥${Math.round((c.salaryMin||c.salary*0.85)/10000)}万</span><span class="cn yellow">粗利¥${Math.round(mg/10000)}万</span></div><div class="cand-traits">${pBadge}${tr}</div>${caseMatch}${c.negotiationResult==='refused'?`<div class="nego-refused">⚠ 交渉決裂 - 別の候補者を選んでください</div>`:""}</div></div>`;}).join("");
+return`<div class="cand-card ${c.negotiationResult==='refused'?'refused':''}" data-cid="${c.id}"><div class="cand-portrait">${Portrait.generate(c)}</div><div class="cand-info"><div class="cand-name">${c.name} <span class="cand-age">${c.age||"?"}歳</span></div><div class="cand-type">${c.typeName} / 経験${c.exp}年 / ${"★".repeat(c.skill)}</div><div class="cand-tags">${tags}</div><div class="cand-nums"><span class="cn blue">希望¥${Math.round(c.salaryAsk/10000)}万</span><span class="cn muted">最低¥${Math.round((c.salaryMin||c.salary*0.85)/10000)}万</span><span class="cn yellow"> 粗利<b>${mgV}万</b><span style="font-size:10px;color:rgba(255,255,255,.55);display:block">単価${bilV}万−給与${salV}万/月</span></span></div><div class="cand-traits">${pBadge}${tr}</div>${caseMatch}${c.negotiationResult==='refused'?`<div class="nego-refused">⚠ 交渉決裂 - 別の候補者を選んでください</div>`:""}</div></div>`;}).join("");
 return`<div class="modal-overlay"><div class="modal"><h2>候補者を選ぶ</h2><p class="modal-sub">${ch.name||""} · ${ch.cost===0?"無料":"¥"+Math.round((ch.cost||0)/10000)+"万"}</p><div class="cand-list" id="cand-list">${items}</div><div class="modal-foot"><button id="btn-modal-close" class="btn btn-ghost">キャンセル</button><div class="nego-btns" id="nego-btns" style="display:none"><div class="nego-label">💼 給与交渉オプション</div><button id="btn-nego-full" class="btn btn-success nego-btn"><div class="nb-left"><span class="nbi">✓</span><span class="nbt">希望額で採用</span></div><span class="nbp" style="background:rgba(0,212,170,0.2);color:#00d4aa">確率 100%</span></button><button id="btn-nego-mid" class="btn btn-primary nego-btn"><div class="nb-left"><span class="nbi">⚡</span><span class="nbt">交渉する<small> (-15%)</small></span></div><span class="nbp" style="background:rgba(58,145,218,0.2);color:#7ab8f5">🎲 確率 80%</span></button><button id="btn-nego-low" class="btn nego-btn" style="background:rgba(255,165,0,0.1);border:1px solid rgba(255,165,0,0.3);color:#ffa500"><div class="nb-left"><span class="nbi">🎲</span><span class="nbt">低額オファー<small> (-30%)</small></span></div><span class="nbp" style="background:rgba(255,165,0,0.15);color:#ffa500">🎲 確率 40%</span></button></div></div><div id="dice-overlay" style="display:none;position:absolute;inset:0;background:rgba(6,8,18,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;border-radius:16px;z-index:10"><div class="dice-label" id="dice-label">交渉中...</div><div class="dice-num" id="dice-num">??</div><div class="dice-bar-wrap"><div class="dice-bar" id="dice-bar"></div><div class="dice-threshold" id="dice-threshold"></div></div><div class="dice-result" id="dice-result"></div><button id="dice-close" class="btn btn-primary" style="display:none;margin-top:16px">続ける →</button></div></div></div>`;}
 
 const bp=s.brandPoints||0;
@@ -283,9 +285,36 @@ requestAnimationFrame(()=>{const hdr=document.querySelector('.game-header');if(h
 const _cw=document.getElementById('btn-cloud-work');
 if(_cw){_cw.onclick=()=>{const r=game.doCloudWork();if(r&&r.ok){Sound.play('cash');this.render(game);}else if(r){Sound.play('warn');alert(r.msg);}}}
 const _sns=document.getElementById('btn-sns-post');
-if(_sns){_sns.onclick=()=>{const r=game.doSNSPost();if(r&&r.ok){Sound.play('click');this.render(game);}else if(r){Sound.play('warn');alert(r.msg);}}}
+if(_sns){_sns.onclick=()=>{
+  const r=game.doSNSPost();
+  if(r&&r.ok){Sound.play(r.success?'success':'click');this.render(game);}
+  else if(r){Sound.play('warn');alert(r.msg);}
+}}
 const _blog=document.getElementById('btn-blog-post');
-if(_blog){_blog.onclick=()=>{const r=game.doBlogPost();if(r&&r.ok){Sound.play('click');if(r.inboundBonus)alert('✍ ブログ効果で来月の案件が増えます！');this.render(game);}else if(r){Sound.play('warn');alert(r.msg);}}}
+if(_blog){_blog.onclick=()=>{
+  const r=game.doBlogPost();
+  if(r&&r.ok){
+    Sound.play(r.success?'success':'click');
+    if(r.inboundBonus)alert('\u270d\ufe0f \u30d6\u30ed\u30b0\u304c\u30d0\u30ba\u3063\u305f\uff01\u6848\u4ef6\u30a4\u30f3\u30d0\u30a6\u30f3\u30c9\u52b9\u679c');
+    this.render(game);
+  } else if(r){Sound.play('warn');alert(r.msg);}
+}}
+const _net=document.getElementById('btn-network');
+if(_net){_net.onclick=()=>{
+  const r=game.doNetworkEvent();
+  if(r&&r.ok){
+    Sound.play(r.success?'success':'click');
+    this.render(game);
+  } else if(r){Sound.play('warn');alert(r.msg);}
+}}
+const _ex=document.getElementById('btn-exhibition');
+if(_ex){_ex.onclick=()=>{
+  const r=game.doExhibition();
+  if(r&&r.ok){
+    Sound.play(r.success?'success':'click');
+    this.render(game);
+  } else if(r){Sound.play('warn');alert(r.msg);}
+}}
 const _tt=document.getElementById('btn-tech-train');
 if(_tt){_tt.onclick=()=>{
   const r=game.doTechTraining();
@@ -493,7 +522,7 @@ const finGraph=(()=>{
   // 損益折れ線
   const pPts=hist.map((h,i)=>{
     const py=zeroY-(h.profit||0)*yScale;
-    return `${pad+i*xStep},${Math.max(2,Math.min(H-2,py)}`;
+    return `${pad+i*xStep},${Math.max(2,Math.min(H-2,py))}`;
   }).join(' ');
   // 最新月のラベル
   const lastH=hist[hist.length-1];
@@ -510,7 +539,7 @@ const finGraph=(()=>{
   <!-- 売上エリア -->
   <polyline points="${rPts}" fill="none" stroke="#7ab8f5" stroke-width="1.5" opacity="0.7"/>
   <!-- 損益折れ線 -->
-  <polyline points="${pPts})" fill="none" stroke="${profitColor}" stroke-width="2"/>
+  <polyline points="${pPts}" fill="none" stroke="${profitColor}" stroke-width="2"/>
   <!-- 最新値ドット -->
   <circle cx="${pad+(hist.length-1)*xStep}" cy="${lastPY}" r="3.5" fill="${profitColor}"/>
   <circle cx="${pad+(hist.length-1)*xStep}" cy="${lastRY}" r="2.5" fill="#7ab8f5"/>
