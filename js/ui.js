@@ -611,7 +611,9 @@ if(cr)cr.onclick=()=>{
   const eng=s.engineers.find(e=>e.id===cas.assignedEngineerId);
   const trust=cas.clientTrust||3;
   const inc=cas.priceIncreaseCount||0;
-  const upRate=Math.max(5,Math.round(({5:0.80,4:0.65,3:0.45,2:0.25,1:0.10}[trust]||0.45-inc*0.15)*100));
+  const _uBase=({5:0.80,4:0.65,3:0.45,2:0.25,1:0.10}[trust]||0.45);
+  const _durBonus=(cas.dur||0)>=24?0.20:(cas.dur||0)>=18?0.15:(cas.dur||0)>=12?0.10:0;
+  const upRate=Math.max(5,Math.min(95,Math.round((_uBase+_durBonus-inc*0.15)*100)));
   const addMemberRate=Math.round({5:85,4:70,3:55,2:35,1:20}[trust]||55);
   const totalRev=Math.round((cas.billingCurrent||0)/10000);
   const monthlyProfit=Math.round((cas.billingCurrent-(eng?.salary||0))*0.85/10000);
@@ -624,6 +626,7 @@ ${eng?`<div class="ev-portrait">${Portrait.generate(eng)}</div>`:''}
   <div>担当: <b>${eng?eng.name:'—'}</b> / ${eng?eng.typeName:'—'}</div>
   <div>月額単価: <b>¥${totalRev}万</b> / 粗利目安: <b>¥${monthlyProfit}万/月</b></div>
   <div>クライアント信頼度: <b>${trustPips}</b> (${trust}/5)</div>
+  <div>契約継続: <b>${cas.dur||0}ヶ月</b>${(cas.dur||0)>=12?`<span style="color:#00d4aa;margin-left:6px">🏆 長期ボーナス+${_durBonus*100|0}%</span>`:''}</div>
   ${inc>0?`<div style="color:#f7971e">⚠ 単価UP履歴: ${inc}回（次回成功率: ${upRate}%）</div>`:''}
 </div>
 <div class="ev-choices">

@@ -893,7 +893,9 @@ class SESGame {
       const trust  = cas.clientTrust || 3;
       const inc    = cas.priceIncreaseCount || 0;
       const base   = { 5: 0.80, 4: 0.65, 3: 0.45, 2: 0.25, 1: 0.10 }[trust] || 0.45;
-      const rate   = Math.max(0.05, base - inc * 0.15);
+      // 1年以上の長期取引で単価UP成功率ボーナス
+      const durBonus = (cas.dur||0) >= 24 ? 0.20 : (cas.dur||0) >= 18 ? 0.15 : (cas.dur||0) >= 12 ? 0.10 : 0;
+      const rate   = Math.max(0.05, Math.min(0.95, base + durBonus - inc * 0.15));
       const ok     = Math.random() < rate;
       if (ok) {
         cas.billingCurrent += amount;
