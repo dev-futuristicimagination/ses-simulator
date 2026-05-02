@@ -816,6 +816,23 @@ class SESGame {
       else if (e.stress >= 60) e.dissatisfaction = Math.min(100, e.dissatisfaction + 4);
     });
 
+    // ─── バックレチェック（最悪ケース）───
+    st.engineers.filter(e=>!e.isSelf&&e.status==='working').forEach(e=>{
+      if ((e.stress||0)>=90 && (e.dissatisfaction||0)>=90 && Math.random()<0.35) {
+        const cas = st.activeCases.find(c=>c.assignedEngineerId===e.id);
+        e.status = 'gone';
+        if (cas) {
+          st.credibility = Math.max(0, (st.credibility||0) - 30);
+          cas.clientTrust = Math.max(1, (cas.clientTrust||3) - 2);
+          st.activeCases = st.activeCases.filter(c=>c.id!==cas.id);
+          this.addLog('bad', `\ud83d\udca8 ${e.name}\u304c\u30d0\u30c3\u30af\u30ec\uff01\u300c${cas.client}\u300d\u6848\u4ef6\u304c\u6d88\u5931\u3002\u4fe1\u7528\u529b-30pt\u3001\u5148\u65b9\u4fe1\u983c\u5ea6-2\u3002\u696d\u754c\u304b\u3089\u306e\u4fe1\u983c\u306f\u56de\u5fa9\u3057\u306a\u3044\u3002`);
+        } else {
+          this.addLog('bad', `\ud83d\udca8 ${e.name}\u304c\u9023\u7d61\u304c\u53d6\u308c\u306a\u304f\u306a\u308a\u307e\u3057\u305f\u3002\u4fe1\u7528\u529b-15pt\u3002`);
+          st.credibility = Math.max(0, (st.credibility||0) - 15);
+        }
+      }
+    });
+
     // 契約満了チェック：即終了せず更新確認として保持
     const expiring = st.activeCases.filter(c => c.monthsLeft <= 0);
     const ongoing  = st.activeCases.filter(c => c.monthsLeft > 0);
@@ -1229,6 +1246,46 @@ class SESGame {
           targetEng2.stress = Math.max(0, (targetEng2.stress||0) - 10);
           this.addLog('good', `\ud83d\udcb8 ${targetEng2.name}\u306b\u5f15\u304d\u7559\u3081\u6607\u7d66\uff01\u6708\u7d66+3\u4e07\u3002\u4e0d\u6e80-35pt`);
         }
+        break;
+      }
+      // \u5f15\u304d\u629c\u304d\u30aa\u30d5\u30a1\u30fc
+      case 'lose_client_trust': {
+        const tc = cas || (eng ? st.activeCases.find(c=>c.assignedEngineerId===eng.id) : null);
+        if (tc) { tc.clientTrust = Math.max(1, (tc.clientTrust||3) - 1); }
+        this.addLog('bad', `\ud83d\udc94 \u30af\u30e9\u30a4\u30a2\u30f3\u30c8\u306e\u4fe1\u983c\u5ea6\u304c\u4e0b\u304c\u3063\u305f\u3002\u6848\u4ef6\u7d99\u7d9a\u4e2d\u3002`);
+        break;
+      }
+      case 'lose_engineer_and_case': {
+        const tc2 = cas || (eng ? st.activeCases.find(c=>c.assignedEngineerId===eng.id) : null);
+        if (eng) { eng.status = 'gone'; }
+        if (tc2) { st.activeCases = st.activeCases.filter(c=>c.id!==tc2.id); }
+        st.credibility = Math.min(100, (st.credibility||0) + 5); // \u8aa0\u5b9f\u5bfe\u5fdc\u3067\u5c11\u3057UP
+        this.addLog('neutral', `\ud83d\udc4b ${eng?eng.name:'\u30a8\u30f3\u30b8\u30cb\u30a2'}\u304c\u8ee2\u7c4d\u3002\u6848\u4ef6\u7d42\u4e86\u3002\u8aa0\u5b9f\u306a\u5bfe\u5fdc\u3067\u696d\u754c\u8a55\u5224+5pt\u3002`);
+        break;
+      }
+      // \u9000\u30d7\u30ed\u5e0c\u671b
+      case 'move_to_waiting': {
+        const tc3 = cas || (eng ? st.activeCases.find(c=>c.assignedEngineerId===eng.id) : null);
+        if (eng) { eng.status = 'waiting'; eng.stress = Math.max(0, (eng.stress||0) - 30); eng.dissatisfaction = Math.max(0, (eng.dissatisfaction||0) - 20); }
+        if (tc3) { st.activeCases = st.activeCases.filter(c=>c.id!==tc3.id); }
+        this.addLog('neutral', `\ud83c\udfc3 ${eng?eng.name:'\u30a8\u30f3\u30b8\u30cb\u30a2'}\u3092\u5f85\u6a5f\u306b\u623b\u3057\u307e\u3057\u305f\u3002\u30b9\u30c8\u30ec\u30b9\u56de\u5fa9\u3002\u58f2\u4e0a\u306f\u6e1b\u308a\u307e\u3059\u3002`);
+        break;
+      }
+      case 'pay_10000_monthly': {
+        st.money -= 10000;
+        if (eng) { eng.salary += 10000; eng.dissatisfaction = Math.max(0, (eng.dissatisfaction||0) - 10); }
+        this.addLog('neutral', `\ud83d\udcb0 \u73fe\u5834\u624b\u5f53\u3066+1\u4e07\u5186\u652f\u6255\u3044\u3002\u4e00\u6642\u7684\u306a\u7dad\u6301\u3002`);
+        break;
+      }
+      case 'stress_increase_big': {
+        if (eng) { eng.dissatisfaction = Math.min(100, (eng.dissatisfaction||0) + 25); eng.stress = Math.min(100, (eng.stress||0) + 15); }
+        this.addLog('bad', `\ud83d\udca2 \u65ad\u3063\u305f\u3053\u3068\u3067\u4e0d\u6e80\u5927\u5e45\u5897\u52a0\u3002\u9000\u8077\u30ea\u30b9\u30af\u304c\u9ad8\u307e\u3063\u305f\u3002`);
+        break;
+      }
+      // \u30ad\u30e3\u30ea\u30a2\u30a2\u30c3\u30d7\u8981\u6c42
+      case 'career_promise': {
+        if (eng) { eng.dissatisfaction = Math.max(0, (eng.dissatisfaction||0) - 15); eng.careerPromise = true; }
+        this.addLog('neutral', `\ud83e\udd1d \u3044\u3044\u6848\u4ef6\u3092\u63a2\u3059\u3068\u7d04\u675f\u3057\u305f\u3002${eng?eng.name:''}:(\u671f\u5f85\u3059\u308b\u3002)`);
         break;
       }
       case 'none': default: break;

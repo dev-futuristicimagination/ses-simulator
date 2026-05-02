@@ -212,5 +212,38 @@ const EDUCATION_TEXTS = {
       const cnt = st.engineers.filter(e=>!e.isSelf&&e.status==='waiting'&&(e.monthsWaiting||0)>=3).length;
       return cnt > 0 ? cnt * 25 : 0;
     }
+  },
+  { id:'direct_hire_offer', type:'bad', title:'🏢 クライアントから引き抜きオファー！',
+    getDesc:(e,cas)=>(e?e.name:'エンジニア')+'が'+(cas?cas.client:'クライアント')+'から「うちに直接来ませんか？」と誘われています。長期参画で現場の評価が高い証拠。',
+    choices:[
+      {text:'月+5万ボーナスで引き止める', effect:'pay_50000', outcome:'引き止め成功。ただし誤魔化策。短期的安心。'},
+      {text:'断って契約継続を交渉する', effect:'lose_client_trust', outcome:'エンジニアは残ったがクライアントの信頼度低下。'},
+      {text:'本人の意志を尊重する', effect:'lose_engineer_and_case', outcome:'転籍。案件も終了。誘塩な対応で業界評判は上がった。'}
+    ],
+    condition:s=>s.activeCases.some(c=>(c.dur-c.monthsLeft)>=6&&(c.clientTrust||3)>=4),
+    needsEngineer:true, needsActiveCase:true,
+    weight:0, dynamicWeight:(st)=>{const cnt=st.activeCases.filter(c=>(c.dur-c.monthsLeft)>=6&&(c.clientTrust||3)>=4).length;return cnt*10;}
+  },
+  { id:'project_exit_request', type:'bad', title:'🏃 現場から出してほしい…',
+    getDesc:(e,cas)=>(e?e.name:'エンジニア')+'が「'+(cas?cas.client:'現場')+'がきつくて限界。他の案件に移して」と相談。',
+    choices:[
+      {text:'待機に戻す（売上減るが本人回復）', effect:'move_to_waiting', outcome:'アサイン解除。ストレス大幅回復。案件は終了。'},
+      {text:'月+1万手当てで引き止める', effect:'pay_10000_monthly', outcome:'手当てでしばらく維持。根本解決にはならない。'},
+      {text:'今は難しいと断る', effect:'stress_increase_big', outcome:'不満大幅増加。退職リスク上昇。'}
+    ],
+    condition:s=>s.activeCases.some(c=>{const elapsed=c.dur-c.monthsLeft;const eng=s.engineers.find(e=>e.id===c.assignedEngineerId);return elapsed>=4&&eng&&(eng.stress||0)>=60;}),
+    needsEngineer:true, needsActiveCase:true,
+    weight:0, dynamicWeight:(st)=>{const cnt=st.activeCases.filter(c=>{const e2=st.engineers.find(e=>e.id===c.assignedEngineerId);return(c.dur-c.monthsLeft)>=4&&e2&&(e2.stress||0)>=60;}).length;return cnt*20;}
+  },
+  { id:'career_up_request', type:'bad', title:'🚀 もっと上流案件に行きたい！',
+    getDesc:(e)=>(e?e.name:'エンジニア')+'が「スキルアップにならない現場は限界。上流に移りたい」と相談。',
+    choices:[
+      {text:'いい案件を探すと約束する', effect:'career_promise', outcome:'約束した。早めに上流案件を探そう。'},
+      {text:'1on1で現状の価値を説明する', effect:'one_on_one_event', outcome:'少し納得。不満は残る。'},
+      {text:'自主退職を受け入れる', effect:'lose_engineer', outcome:'円満退職。案件は継続できるが人手が減る。'}
+    ],
+    condition:s=>s.activeCases.some(c=>{const elapsed=c.dur-c.monthsLeft;const eng=s.engineers.find(e=>e.id===c.assignedEngineerId);return elapsed>=6&&eng&&(eng.personality==='ambitious'||eng.personality==='passionate');}),
+    needsEngineer:true, needsActiveCase:true,
+    weight:0, dynamicWeight:(st)=>{const cnt=st.activeCases.filter(c=>{const e2=st.engineers.find(e=>e.id===c.assignedEngineerId);return(c.dur-c.monthsLeft)>=6&&e2&&(e2.personality==='ambitious'||e2.personality==='passionate');}).length;return cnt*12;}
   }
 ];
