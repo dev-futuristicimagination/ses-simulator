@@ -801,10 +801,13 @@ class SESGame {
         const cas = st.activeCases.find(c=>c.assignedEngineerId===e.id);
         stressBase = cas?.risk==='high' ? 14 : cas?.risk==='medium' ? 9 : 5;
         e.monthsWorked = (e.monthsWorked||0) + 1;
+        e.monthsWaiting = 0; // 稼働中はリセット
       } else if (e.status === 'waiting') {
-        // 待機中：仕事がないストレス
-        stressBase = 10;
-        e.dissatisfaction = Math.min(100, e.dissatisfaction + 15);
+        // 待機中：仕事がないストレス（月数に応じて加速）
+        e.monthsWaiting = (e.monthsWaiting||0) + 1;
+        const waitMo = e.monthsWaiting;
+        stressBase = waitMo >= 4 ? 16 : waitMo >= 3 ? 13 : 10;
+        e.dissatisfaction = Math.min(100, e.dissatisfaction + (waitMo >= 3 ? 20 : 15));
       }
       const stressInc = Math.round(stressBase * stressRate);
       e.stress = Math.min(100, (e.stress||0) + stressInc);
@@ -851,6 +854,34 @@ class SESGame {
     st.credibility = Math.max(0, (st.credibility||0) - credLoss);
     eng.status = 'gone';
     this.addLog('bad', `\u2716 ${eng.name}\u3092\u89e3\u96c7\u3002\u9000\u8077\u91d1\u00a5${Math.round(severance/10000)}\u4e07 / \u4fe1\u7528\u529b-${credLoss}pt\uff08\u696d\u754c\u53e3\u30b3\u30df\uff09`);
+    return { ok: true };
+  }
+
+  // ─── 1on1面談（不満・ストレス軽減）───
+  doOneOnOne(engineerId) {
+    const st = this.state;
+    if (st.actionsRemaining <= 0) return { ok: false, msg: '\u30a2\u30af\u30b7\u30e7\u30f3\u304c\u8db3\u308a\u307e\u305b\u3093' };
+    const eng = st.engineers.find(e => e.id === engineerId);
+    if (!eng || eng.status === 'gone') return { ok: false, msg: '\u5bfe\u8c61\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093' };
+    st.actionsRemaining--;
+    const dissReduce = 25 + Math.floor(Math.random() * 10);
+    const stressReduce = 15 + Math.floor(Math.random() * 8);
+    eng.dissatisfaction = Math.max(0, (eng.dissatisfaction || 0) - dissReduce);
+    eng.stress = Math.max(0, (eng.stress || 0) - stressReduce);
+    this.addLog('good', `\ud83d\udde3 ${eng.name}\u3068\u30671on1\u9762\u8ac7\u3002\u4e0d\u6e80-${dissReduce}pt\u30fb\u30b9\u30c8\u30ec\u30b9-${stressReduce}pt\u3002`);
+    return { ok: true, dissReduce, stressReduce };
+  }
+
+  // ─── 引き留め昇給（給与UP＋不満リセット）───
+  doRetentionRaise(engineerId) {
+    const st = this.state;
+    const eng = st.engineers.find(e => e.id === engineerId);
+    if (!eng || eng.status === 'gone') return { ok: false, msg: '\u5bfe\u8c61\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093' };
+    const raise = 30000;
+    eng.salary += raise;
+    eng.dissatisfaction = Math.max(0, (eng.dissatisfaction || 0) - 35);
+    eng.stress = Math.max(0, (eng.stress || 0) - 10);
+    this.addLog('good', `\ud83d\udcb8 ${eng.name}\u306b\u5f15\u304d\u7559\u3081\u6607\u7d66\uff01\u6708\u7d66+${Math.round(raise/10000)}\u4e07\u5186\u3002\u4e0d\u6e80-35pt`);
     return { ok: true };
   }
 
@@ -1175,6 +1206,29 @@ class SESGame {
         st.brandPoints = Math.min(100, (st.brandPoints||0) + bpBig);
         st.credibility = Math.min(100, (st.credibility||0) + credGain);
         this.addLog('good', `\ud83c\udf1f\ud83c\udf1f SNS\u5927\u30d0\u30ba\uff01\u30d6\u30e9\u30f3\u30c9+${bpBig}pt \u4fe1\u7528\u529b+${credGain}pt\u3002`);
+        break;
+      }
+      // \u9577\u671f\u5f85\u6a5f\u30a4\u30d9\u30f3\u30c8\u306e\u5bfe\u5fdc
+      case 'one_on_one_event': {
+        const targetEng = eng || st.engineers.find(e=>!e.isSelf&&e.status==='waiting'&&(e.monthsWaiting||0)>=3);
+        if (targetEng) {
+          if (st.actionsRemaining > 0) st.actionsRemaining--;
+          const dr = 25 + Math.floor(Math.random()*10);
+          const sr = 15 + Math.floor(Math.random()*8);
+          targetEng.dissatisfaction = Math.max(0, (targetEng.dissatisfaction||0) - dr);
+          targetEng.stress = Math.max(0, (targetEng.stress||0) - sr);
+          this.addLog('good', `\ud83d\udde3 ${targetEng.name}\u30671on1\u9762\u8ac7\u3002\u4e0d\u6e80-${dr}pt\u30fb\u30b9\u30c8\u30ec\u30b9-${sr}pt`);
+        }
+        break;
+      }
+      case 'retention_raise_event': {
+        const targetEng2 = eng || st.engineers.find(e=>!e.isSelf&&e.status==='waiting'&&(e.monthsWaiting||0)>=3);
+        if (targetEng2) {
+          targetEng2.salary += 30000;
+          targetEng2.dissatisfaction = Math.max(0, (targetEng2.dissatisfaction||0) - 35);
+          targetEng2.stress = Math.max(0, (targetEng2.stress||0) - 10);
+          this.addLog('good', `\ud83d\udcb8 ${targetEng2.name}\u306b\u5f15\u304d\u7559\u3081\u6607\u7d66\uff01\u6708\u7d66+3\u4e07\u3002\u4e0d\u6e80-35pt`);
+        }
         break;
       }
       case 'none': default: break;

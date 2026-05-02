@@ -198,5 +198,19 @@ const EDUCATION_TEXTS = {
     choices:[
       {text:'応募エンジニアに返信する', effect:'sns_brand_boost', outcome:'ブランド力大幅UP！将来的に悪口への替えになる。'},
       {text:'標準採用プロセスへ辺り込む', effect:'sns_brand_big_boost', outcome:'ブランド力大幅UPかつ一時的に信用力も上昇。'}
-    ], weight:10, needsEngineer:false, needsActiveCase:false }
+    ], weight:10, needsEngineer:false, needsActiveCase:false },
+  { id:'long_wait_burnout', type:'bad', title:'💼 転職活動の気配！',
+    getDesc:(e)=>`${e?e.name:'エンジニア'}が案件にアサインされない日々が続き、転職エージェントに登録したようです。このままだと失ってしまいます。`,
+    choices:[
+      {text:'1on1面談で正直に話す（アクション消費）', effect:'one_on_one_event', outcome:'面談した。不満が少し減ったが、案件がないことは変わらない。'},
+      {text:'昇給で引き留める（月+3万）', effect:'retention_raise_event', outcome:'引き留め成功！ただし固定費が上がる。案件を確保しないと赤字になるので要注意。'},
+      {text:'自主退職を受け入れる', effect:'lose_engineer', outcome:'辞表を受け取った。積素な離席だったが、一人少なくなる。'}
+    ],
+    condition:s=>s.engineers.some(e=>!e.isSelf&&e.status==='waiting'&&(e.monthsWaiting||0)>=3),
+    needsEngineer:true, needsActiveCase:false,
+    weight:0, dynamicWeight:(st)=>{
+      const cnt = st.engineers.filter(e=>!e.isSelf&&e.status==='waiting'&&(e.monthsWaiting||0)>=3).length;
+      return cnt > 0 ? cnt * 25 : 0;
+    }
+  }
 ];

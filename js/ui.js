@@ -150,7 +150,11 @@ engRow(eng,game){
   const sdot=eng.status==="working"?`<span class="er-sdot working">\u25cf\u7a3c\u50cd</span>`:eng.status==="waiting"?`<span class="er-sdot waiting">\u25cf\u5f85\u6a5f</span>`:"";
   const infoLine=cas?`<div class="er-info">\ud83d\udccb ${cas.desc||cas.client}\uff08\u6b8b${cas.monthsLeft}\u30f6\u6708\uff09</div>`:`<div class="er-info er-wait">\u23f3 \u5f85\u6a5f\u4e2d <span style="color:#e94560;font-size:9px">\u7d66\u4e0e\u767a\u751f\u4e2d</span></div>`;
   const canAct=s.actionsRemaining>0&&!eng.isSelf&&eng.status==="waiting";
-  const acts=canAct?`<div class="er-acts"><button class="btn-eng-assign btn btn-xs btn-primary" data-eng-id="${eng.id}">\u2192\u6848\u4ef6</button>${(eng.skill||0)<3?`<button class="btn btn-xs btn-train" data-eng-id="${eng.id}" style="background:rgba(125,211,252,.1);border:1px solid rgba(125,211,252,.3);color:#7dd3fc">\ud83d\udcda\u80b2\u6210</button>`:""}</div>`:"";
+  const waitMo=eng.monthsWaiting||0;
+  const waitBadge=waitMo>=3?`<div style="color:#e94560;font-size:9px;margin:2px 0">⏰ ${waitMo}ヶ月待機中—案件アサインが急務！</div>`:(waitMo>=1?`<div style="color:#f7971e;font-size:9px;margin:2px 0">⏰ ${waitMo}ヶ月待機</div>`:"");
+  const one1Btn=(s.actionsRemaining>0&&!eng.isSelf&&(d>=50||waitMo>=3))?`<button class="btn btn-xs btn-1on1" data-eng-id="${eng.id}" style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.4);color:#a78bfa;margin-top:2px">🗣 1on1</button>`:""; 
+  const raiseBtn=(d>=70&&!eng.isSelf&&eng.status==="waiting")?`<button class="btn btn-xs btn-raise" data-eng-id="${eng.id}" style="background:rgba(247,151,30,.15);border:1px solid rgba(247,151,30,.4);color:#f7971e;margin-top:2px">💸 昇給引同</button>`:""; 
+  const acts=canAct?`<div class="er-acts"><button class="btn-eng-assign btn btn-xs btn-primary" data-eng-id="${eng.id}">→案件</button>${(eng.skill||0)<3?`<button class="btn btn-xs btn-train" data-eng-id="${eng.id}" style="background:rgba(125,211,252,.1);border:1px solid rgba(125,211,252,.3);color:#7dd3fc">📚育成</button>`:""}${one1Btn}${raiseBtn}</div>`:((one1Btn||raiseBtn)?`<div class="er-acts">${one1Btn}${raiseBtn}</div>`:"");
   const dangerBadge=d>=70?`<div class="er-danger-label">\ud83d\udea8 \u9000\u8077\u5371\u967a</div>`:d>=50?`<div class="er-danger-label" style="color:#ffd600">\u26a0 \u96e2\u8077\u30ea\u30b9\u30af</div>`:"";
   const fireBtn=(!eng.isSelf&&eng.status==="waiting")?`<button class="btn-fire-eng btn btn-xs" data-eng-id="${eng.id}" style="background:rgba(233,69,96,.1);border:1px solid rgba(233,69,96,.3);color:#e94560;margin-top:4px">\ud83d\udd34 \u89e3\u96c7</button>`:"";
   return`<div class="eng-row${d>=70?" er-crit":""}" data-estatus="${eng.status}">
@@ -158,7 +162,7 @@ ${por}<div class="er-body">
 <div class="er-top"><span class="er-name">${eng.name}${eng.isSelf?`<span class='crown'>\ud83d\udc51</span>`:""}</span>${pBadge}${sdot}</div>
 <div class="er-mid"><span class="er-type">${eng.typeName}</span><span class="er-sal">\u00a5${Math.round(eng.salary/10000)}\u4e07</span><span class="er-sk">${"\u2605".repeat(eng.skill||0)}${"\u2606".repeat(5-(eng.skill||0))}</span></div>
 <div class="er-bars"><div class="er-dbar-wrap" title="\u4e0d\u6e80${d}%"><div class="er-dbar" style="width:${d}%;background:${dc}"></div></div><span class="er-stress" style="color:${sc}">\ud83d\ude24${stress}%</span></div>
-${infoLine}${dangerBadge}${acts}${fireBtn}
+${infoLine}${waitBadge}${dangerBadge}${acts}${fireBtn}
 </div></div>`},caseCard(cas,state,isActive){
 const tc={direct:"type-direct",primary:"type-primary",secondary:"type-secondary",tertiary:"type-tertiary"}[cas.type]||"";
 const pct=Math.min(100,Math.round(cas.billingCurrent/1300000*100));
@@ -403,7 +407,22 @@ document.querySelectorAll(".btn-decline").forEach(btn=>{btn.onclick=()=>{
   game.declineCase(cid);
   this.render(game);
 };});;
-document.querySelectorAll(".btn-fire-eng").forEach(btn=>{btn.onclick=()=>{const eid=parseInt(btn.dataset.engId);const eng=game.state.engineers.find(e=>e.id===eid);if(!eng)return;if(!confirm(`${eng.name}\u3092\u89e3\u96c7\u3057\u307e\u3059\u304b\uff1f\n\u9000\u8077\u91d1\uff1a\u00a5${Math.round(eng.salary/10000)}\u4e07\u5186\uff081\u304b\u6708\u5206\uff09`))return;const r=game.fireEngineer(eid);if(r&&r.ok){Sound.play("alert");this.render(game);}else if(r){Sound.play("warn");alert(r.msg);}};});
+document.querySelectorAll(".btn-fire-eng").forEach(btn=>{btn.onclick=()=>{const eid=parseInt(btn.dataset.engId);const eng=game.state.engineers.find(e=>e.id===eid);if(!eng)return;if(!confirm(`${eng.name}\u3092\u89e3\u96c7\u3057\u307e\u3059\u304b\uff1f\n\u9000\u8077\u91d1\uff1a\u00a5${Math.round(eng.salary/10000)}\u4e07\u5186\uff081\u304b\u6708\u5206\uff09\n\u26a0 \u4fe1\u7528\u529b\u30c0\u30a6\u30f3\uff01\u696d\u754c\u53e3\u30b3\u30df\u304c\u5e83\u307e\u308a\u307e\u3059\u3002`))return;const r=game.fireEngineer(eid);if(r&&r.ok){Sound.play("alert");this.render(game);}else if(r){Sound.play("warn");alert(r.msg);}};});
+document.querySelectorAll(".btn-1on1").forEach(btn=>{btn.onclick=()=>{
+  const eid=parseInt(btn.dataset.engId);
+  const r=game.doOneOnOne(eid);
+  if(r&&r.ok){Sound.play('success');this.render(game);}
+  else if(r){Sound.play('warn');alert(r.msg);}
+};});
+document.querySelectorAll(".btn-raise").forEach(btn=>{btn.onclick=()=>{
+  const eid=parseInt(btn.dataset.engId);
+  const eng=game.state.engineers.find(e=>e.id===eid);
+  if(!eng)return;
+  if(!confirm(`${eng.name}\u306b\u5f15\u304d\u7559\u3081\u6607\u7d66\u3057\u307e\u3059\u304b\uff1f\n\u6708\u7d66+3\u4e07\u5186\uff08\u4ee5\u964d\u6bce\u6708\u306e\u56fa\u5b9a\u8cbb\u5897\u52a0\uff09\n\u4e0d\u6e80\u5ea6-35pt\u3002\u6848\u4ef6\u30a2\u30b5\u30a4\u30f3\u3067\u6839\u672c\u89e3\u6c7a\u3092\u5fc3\u304c\u3051\u3066\u304f\u3060\u3055\u3044\u3002`))return;
+  const r=game.doRetentionRaise(eid);
+  if(r&&r.ok){Sound.play('cash');this.render(game);}
+  else if(r){Sound.play('warn');alert(r.msg);}
+};});
 document.querySelectorAll(".btn-assign").forEach(btn=>{
   btn.onclick=()=>{
     if(btn.disabled)return;

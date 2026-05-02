@@ -1,20 +1,36 @@
-// Helper script to append SNS events to data.js
+// append long_wait event to data.js
 const fs = require('fs');
 const file = 'js/data.js';
 let c = fs.readFileSync(file, 'utf8');
 
-const newEvents = `,\r\n  { id:'sns_bad_rep', type:'bad', title:'\ud83d\udca2 SNS\u306b\u60aa\u53e3\u3092\u66f8\u304b\u308c\u305f\uff01',\r\n    getDesc:()=>'\u5143\u5f93\u696d\u54e1\u3089\u3057\u304d\u4eba\u7269\u304c\u300c\u3042\u306e\u4f1a\u793e\u306f\u30d6\u30e9\u30c3\u30af\uff01\u301d\u3068\u6295\u7a3f\u3002\u4f1a\u793e\u540d\u5165\u308a\u3067\u66f8\u304b\u308c\u696d\u754c\u306b\u5e83\u307e\u308a\u307e\u3057\u305f\u3002',\r\n    choices:[\r\n      {text:'\u516c\u5f0f\u306b\u5bfe\u5fdc\u8868\u660e\u3092\u51fa\u3059', effect:'credibility_recover', outcome:'\u5bfe\u5fdc\u8868\u660e\u3067\u4fe1\u7528\u529b\u5c0f\u5e45\u56de\u5fa9\u3002\u4e2b\u512a\u3057\u306e\u8a55\u5224\u306b\u306f\u6642\u9593\u304c\u304b\u304b\u308b\u3002'},\r\n      {text:'\u30b9\u30eb\u30fc\u3059\u308b\uff08\u7121\u8996\uff09', effect:'credibility_loss_sns', outcome:'\u4f55\u3082\u3057\u306a\u304b\u3063\u305f\u304c\u3001\u30b9\u30ec\u304c\u62e1\u6563\u3002'}\r\n    ], weight:12, needsEngineer:false, needsActiveCase:false },\r\n  { id:'sns_viral', type:'good', title:'\ud83c\udf1f SNS\u304c\u30d0\u30ba\u3063\u305f\uff01',\r\n    getDesc:()=>'\u6295\u7a3f\u3057\u305f\u30c6\u30c3\u30af\u30d6\u30ed\u30b0\u304c\u62e1\u6563\u3002DM\u304c\u6bb5\u3005\u5c4a\u3044\u3066\u3044\u307e\u3059\u3002',\r\n    choices:[\r\n      {text:'\u5fdc\u52df\u30a8\u30f3\u30b8\u30cb\u30a2\u306b\u8fd4\u4fe1\u3059\u308b', effect:'sns_brand_boost', outcome:'\u30d6\u30e9\u30f3\u30c9\u529b\u5927\u5e45UP\uff01\u5c06\u6765\u7684\u306b\u60aa\u53e3\u3078\u306e\u66ff\u3048\u306b\u306a\u308b\u3002'},\r\n      {text:'\u6a19\u6e96\u63a1\u7528\u30d7\u30ed\u30bb\u30b9\u3078\u8fba\u308a\u8fbc\u3080', effect:'sns_brand_big_boost', outcome:'\u30d6\u30e9\u30f3\u30c9\u529b\u5927\u5e45UP\u304b\u3064\u4e00\u6642\u7684\u306b\u4fe1\u7528\u529b\u3082\u4e0a\u6607\u3002'}\r\n    ], weight:10, needsEngineer:false, needsActiveCase:false }`;
+// Build the new event as raw string (avoid template literal issues)
+const lines = [
+  ",",
+  "  { id:'long_wait_burnout', type:'bad', title:'\u{1F4BC} \u8ee2\u8077\u6d3b\u52d5\u306e\u6c17\u914d\uff01',",
+  "    getDesc:(e)=>`${e?e.name:'\u30a8\u30f3\u30b8\u30cb\u30a2'}\u304c\u6848\u4ef6\u306b\u30a2\u30b5\u30a4\u30f3\u3055\u308c\u306a\u3044\u65e5\u3005\u304c\u7d9a\u304d\u3001\u8ee2\u8077\u30a8\u30fc\u30b8\u30a7\u30f3\u30c8\u306b\u767b\u9332\u3057\u305f\u3088\u3046\u3067\u3059\u3002\u3053\u306e\u307e\u307e\u3060\u3068\u5931\u3063\u3066\u3057\u307e\u3044\u307e\u3059\u3002`,",
+  "    choices:[",
+  "      {text:'1on1\u9762\u8ac7\u3067\u6b63\u76f4\u306b\u8a71\u3059\uff08\u30a2\u30af\u30b7\u30e7\u30f3\u6d88\u8cbb\uff09', effect:'one_on_one_event', outcome:'\u9762\u8ac7\u3057\u305f\u3002\u4e0d\u6e80\u304c\u5c11\u3057\u6e1b\u3063\u305f\u304c\u3001\u6848\u4ef6\u304c\u306a\u3044\u3053\u3068\u306f\u5909\u308f\u3089\u306a\u3044\u3002'},",
+  "      {text:'\u6607\u7d66\u3067\u5f15\u304d\u7559\u3081\u308b\uff08\u6708+3\u4e07\uff09', effect:'retention_raise_event', outcome:'\u5f15\u304d\u7559\u3081\u6210\u529f\uff01\u305f\u3060\u3057\u56fa\u5b9a\u8cbb\u304c\u4e0a\u304c\u308b\u3002\u6848\u4ef6\u3092\u78ba\u4fdd\u3057\u306a\u3044\u3068\u8d64\u5b57\u306b\u306a\u308b\u306e\u3067\u8981\u6ce8\u610f\u3002'},",
+  "      {text:'\u81ea\u4e3b\u9000\u8077\u3092\u53d7\u3051\u5165\u308c\u308b', effect:'lose_engineer', outcome:'\u8f9e\u8868\u3092\u53d7\u3051\u53d6\u3063\u305f\u3002\u7a4d\u7d20\u306a\u96e2\u5e2d\u3060\u3063\u305f\u304c\u3001\u4e00\u4eba\u5c11\u306a\u304f\u306a\u308b\u3002'}",
+  "    ],",
+  "    condition:s=>s.engineers.some(e=>!e.isSelf&&e.status==='waiting'&&(e.monthsWaiting||0)>=3),",
+  "    needsEngineer:true, needsActiveCase:false,",
+  "    weight:0, dynamicWeight:(st)=>{",
+  "      const cnt = st.engineers.filter(e=>!e.isSelf&&e.status==='waiting'&&(e.monthsWaiting||0)>=3).length;",
+  "      return cnt > 0 ? cnt * 25 : 0;",
+  "    }",
+  "  }"
+];
+const newEvent = lines.join('\r\n');
 
-// Find the marker: "needsActiveCase:false }" + CRLF + "];"
 const marker = 'needsActiveCase:false }\r\n];';
 if (c.includes(marker)) {
-  c = c.replace(marker, 'needsActiveCase:false }' + newEvents + '\r\n];');
+  c = c.replace(marker, 'needsActiveCase:false }' + newEvent + '\r\n];');
   fs.writeFileSync(file, c, 'utf8');
-  console.log('OK - SNS events appended');
-  // Validate
+  console.log('OK - long_wait event added');
   const vm = require('vm');
   try { new vm.Script(fs.readFileSync(file,'utf8')); console.log('Syntax: OK'); }
   catch(e) { console.log('Syntax ERR: ' + e.message); }
 } else {
-  console.log('MARKER NOT FOUND - last 80 chars: ' + JSON.stringify(c.slice(-80)));
+  console.log('MARKER NOT FOUND - last 80: ' + JSON.stringify(c.slice(-80)));
 }
