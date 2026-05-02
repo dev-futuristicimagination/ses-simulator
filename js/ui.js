@@ -83,6 +83,14 @@ const moneyDanger=s.money<500000;
 const mkLabels={normal:'通常市場',boom:'🔥 好況期',recession:'📉 不況期'};
 const mkColors={normal:'rgba(255,255,255,0.1)',boom:'rgba(255,100,0,0.2)',recession:'rgba(100,150,255,0.2)'};
 const mkLabel=mkLabels[s.marketCondition||'normal'];
+// ─ 各アクションの成功率計算 ─
+const _tp=game.getTechPower(), _cr=game.getCredibility(), _bp=s.brandPoints||0;
+const _snsRate  = Math.round((0.25+Math.min(0.4,_bp*0.004))*100);
+const _blogRate = Math.round((0.3 +Math.min(0.5,_tp*0.04))*100);
+const _netRate  = Math.round((0.45+Math.min(0.35,_cr*0.004))*100);
+const _exRate   = Math.round((0.55+Math.min(0.25,_bp*0.003))*100);
+// 成功率に応じた色分け関数
+const _rc=p=>p>=70?'#00d4aa':p>=45?'#ffd200':'#e94560';
 return`<div class="game-layout">
 <header class="game-header" style="background:linear-gradient(180deg,rgba(6,8,18,.95) 0%,rgba(6,8,18,.88) 100%),url('img/office_bg.png') center/cover no-repeat;">
 <div class="gh-top">
@@ -97,13 +105,13 @@ return`<div class="game-layout">
 <div class="gh-progress"><div class="gp-label"><span>年商1億目標</span><span class="gp-pct ${prog>=75?'gp-near':prog>=50?'gp-half':''}">${prog}%</span></div><div class="gp-bar"><div class="gp-fill" style="width:${prog}%"></div></div></div>
 </div>
 <div class="gh-actions">
-<button id="btn-do-sales" class="gh-act-btn sales" title="\u55b6\u696d\u30a2\u30af\u30b7\u30e7\u30f3\uff081\u6d88\u8cbb\uff09">📣<span>\u55b6\u696d</span></button>
-<button id="btn-cloud-work" class="gh-act-btn cloud" title="\u30af\u30e9\u30a6\u30c9\u30bd\u30fc\u30b7\u30f3\u30b0">💻<span>\u30af\u30e9\u30a6\u30c9</span></button>
-<button id="btn-sns-post" class="gh-act-btn sns" title="SNS\u6295\u7a3f\uff082\u56de/\u6708\uff09\u2022\u30d0\u30ba\u308b\u304b\u3069\u3046\u304b">📢<span>SNS</span></button>
-<button id="btn-blog-post" class="gh-act-btn blog" title="\u30d6\u30ed\u30b0\u8a18\u4e8b\u2022\u6280\u8853\u529b\u9ad8\u3044\u307b\u3069\u53cd\u97ff\u5927">✍<span>\u30d6\u30ed\u30b0</span></button>
-<button id="btn-network" class="gh-act-btn network" title="\u696d\u754c\u4ea4\u6d41\u4f1a\u30fb\u98f2\u307f\u4f1a\uff085\u4e07\u5186\uff09">🍺<span>\u4ea4\u6d41\u4f1a</span></button>
-<button id="btn-exhibition" class="gh-act-btn exhibition" title="\u5c55\u793a\u4f1a\u30fb\u540d\u523a\u4ea4\u63db\uff083\u4e07\u5186\uff09">💼<span>\u5c55\u793a\u4f1a</span></button>
-<button id="btn-tech-train" class="gh-act-btn tech" title="\u5168\u30a8\u30f3\u30b8\u30cb\u30a2\u6280\u8853\u7814\u4fee\u300030\u4e07\u5186">🔬<span>\u6280\u8853\u7814\u4fee</span></button>
+<button id="btn-do-sales" class="gh-act-btn sales" title="\u55b6\u696d\u30a2\u30af\u30b7\u30e7\u30f3\uff081\u6d88\u8cbb\uff09">📣<span>\u55b6\u696d</span><small class="act-rate" style="color:#00d4aa">\u78ba\u5b9f</small></button>
+<button id="btn-cloud-work" class="gh-act-btn cloud" title="\u30af\u30e9\u30a6\u30c9\u30bd\u30fc\u30b7\u30f3\u30b0">💻<span>\u30af\u30e9\u30a6\u30c9</span><small class="act-rate" style="color:#00d4aa">\u78ba\u5b9f</small></button>
+<button id="btn-sns-post" class="gh-act-btn sns" title="SNS\u6295\u7a3f\uff082\u56de/\u6708\uff09\u2022\u30d0\u30ba\u308b\u304b\u3069\u3046\u304b">📢<span>SNS</span><small class="act-rate" style="color:${_rc(_snsRate)}">${_snsRate}%</small></button>
+<button id="btn-blog-post" class="gh-act-btn blog" title="\u30d6\u30ed\u30b0\u8a18\u4e8b\u2022\u6280\u8853\u529b\u9ad8\u3044\u307b\u3069\u53cd\u97ff\u5927">✍<span>\u30d6\u30ed\u30b0</span><small class="act-rate" style="color:${_rc(_blogRate)}">${_blogRate}%</small></button>
+<button id="btn-network" class="gh-act-btn network" title="\u696d\u754c\u4ea4\u6d41\u4f1a\u30fb\u98f2\u307f\u4f1a\uff085\u4e07\u5186\uff09">🍺<span>\u4ea4\u6d41\u4f1a</span><small class="act-rate" style="color:${_rc(_netRate)}">${_netRate}%</small></button>
+<button id="btn-exhibition" class="gh-act-btn exhibition" title="\u5c55\u793a\u4f1a\u30fb\u540d\u523a\u4ea4\u63db\uff083\u4e07\u5186\uff09">💼<span>\u5c55\u793a\u4f1a</span><small class="act-rate" style="color:${_rc(_exRate)}">${_exRate}%</small></button>
+<button id="btn-tech-train" class="gh-act-btn tech" title="\u5168\u30a8\u30f3\u30b8\u30cb\u30a2\u6280\u8853\u7814\u4fee\u300030\u4e07\u5186">🔬<span>\u6280\u8853\u7814\u4fee</span><small class="act-rate" style="color:#00d4aa">\u78ba\u5b9f</small></button>
 </div>
 </header>
 <div class="game-body">
@@ -211,7 +219,7 @@ return`<div class="modal-overlay"><div class="modal-box" style="max-width:560px"
 mHire(game){const s=game.state;
 
 if(s.hiringChannel){const ch=HIRING_CHANNELS.find(c=>c.id===s.hiringChannel)||{};
-const items=s.hiringCandidates.length===0?`<div class="empty-state" style="padding:40px"><div class="ei">😔</div><div class="et">このチャンネルでは今月候補者が見つかりませんでした<br><small>別のチャンネルを試してみてください</small></div></div>`:s.hiringCandidates.map(c=>{const HIDDEN_T=["backtrack-risk"];const tr=(c.traits||[]).filter(t=>!HIDDEN_T.includes(t)).map(t=>{const tl=TRAIT_LABELS[t];return tl?`<span class="ctrait ${tl.class}">${tl.label}</span>`:""}).join("");const mg=c.billingRate-c.salary;const pt2=typeof PERSONALITY_TYPES!=="undefined"?PERSONALITY_TYPES[c.personality]:null;const pBadge=pt2?`<span class="ctrait" style="background:${pt2.color}18;color:${pt2.color};border:1px solid ${pt2.color}33">${pt2.icon} ${pt2.label}</span>`:"";
+const items=s.hiringCandidates.length===0?`<div class="empty-state" style="padding:40px"><div class="ei">😔</div><div class="et">このチャンネルでは今月候補者が見つかりませんでした<br><small>別のチャンネルを試してみてください</small></div></div>`:s.hiringCandidates.map(c=>{const HIDDEN_T=["backtrack-risk"];const tr=(c.traits||[]).filter(t=>!HIDDEN_T.includes(t)).map(t=>{const tl=TRAIT_LABELS[t];return tl?`<span class="ctrait ${tl.class}">${tl.label}</span>`:""}).join("");const mg=c.billingRate-c.salary;const bilV=Math.round((c.billingRate||0)/10000),salV=Math.round(c.salary/10000),mgV=Math.round(mg/10000);const pt2=typeof PERSONALITY_TYPES!=="undefined"?PERSONALITY_TYPES[c.personality]:null;const pBadge=pt2?`<span class="ctrait" style="background:${pt2.color}18;color:${pt2.color};border:1px solid ${pt2.color}33">${pt2.icon} ${pt2.label}</span>`:"";
 const tags=(c.skillTags||[]).map(t=>`<span class="cand-tag">${t}</span>`).join("");
 const casesCanDo=(s.availableCases||[]).filter(cas=>c.skill>=(cas.requiredSkill||1)&&((cas.requiredTags||[]).length===0||(c.skillTags||[]).some(t=>(cas.requiredTags||[]).includes(t))));
 const caseMatch=casesCanDo.length>0?`<div class="cand-case-match">📋 今月の案件 ${casesCanDo.length}件に対応可能</div>`:`<div class="cand-case-match warn">⚠ 今月の案件に対応できるものがありません</div>`;

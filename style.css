@@ -946,3 +946,15 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
 /* == 交流会・展示会ボタン == */
 .gh-act-btn.network:hover { background:rgba(255,165,0,.15); border-color:rgba(255,165,0,.4); }
 .gh-act-btn.exhibition:hover { background:rgba(167,139,250,.12); border-color:rgba(167,139,250,.4); }
+
+/* == アクションボタン 成功率バッジ == */
+.gh-act-btn { position: relative; }
+.act-rate {
+  display: block;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin-top: 1px;
+  line-height: 1;
+  font-family: 'JetBrains Mono', monospace;
+}
