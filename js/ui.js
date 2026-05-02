@@ -1,4 +1,4 @@
-﻿// SES-SIM v1.4 build:202605030632
+// SES-SIM v1.4 build:202605030632
 const UI={modal:null,selCase:null,selEng:null,selCand:null,
 render(game){const s=game.state,app=document.getElementById("app");app.innerHTML="";
 try{switch(s.phase){
@@ -220,11 +220,11 @@ return`<div class="modal-overlay"><div class="modal-box" style="max-width:560px"
 mHire(game){const s=game.state;
 
 if(s.hiringChannel){const ch=HIRING_CHANNELS.find(c=>c.id===s.hiringChannel)||{};
-const items=s.hiringCandidates.length===0?`<div class="empty-state" style="padding:40px"><div class="ei">😔</div><div class="et">このチャンネルでは今月候補者が見つかりませんでした<br><small>別のチャンネルを試してみてください</small></div></div>`:s.hiringCandidates.map(c=>{const HIDDEN_T=["backtrack-risk"];const tr=(c.traits||[]).filter(t=>!HIDDEN_T.includes(t)).map(t=>{const tl=TRAIT_LABELS[t];return tl?`<span class="ctrait ${tl.class}">${tl.label}</span>`:""}).join("");const mg=c.billingRate-c.salary;const bilV=Math.round((c.billingRate||0)/10000),salV=Math.round(c.salary/10000),mgV=Math.round(mg/10000);const pt2=typeof PERSONALITY_TYPES!=="undefined"?PERSONALITY_TYPES[c.personality]:null;const pBadge=pt2?`<span class="ctrait" style="background:${pt2.color}18;color:${pt2.color};border:1px solid ${pt2.color}33">${pt2.icon} ${pt2.label}</span>`:"";
+const items=s.hiringCandidates.length===0?`<div class="empty-state" style="padding:40px"><div class="ei">😔</div><div class="et">このチャンネルでは今月候補者が見つかりませんでした<br><small>別のチャンネルを試してみてください</small></div></div>`:s.hiringCandidates.map(c=>{const HIDDEN_T=["backtrack-risk"];const tr=(c.traits||[]).filter(t=>!HIDDEN_T.includes(t)).map(t=>{const tl=TRAIT_LABELS[t];return tl?`<span class="ctrait ${tl.class}">${tl.label}</span>`:""}).join("");const bilV=Math.round((c.billingRate||0)/10000),salV=Math.round(c.salary/10000);const pt2=typeof PERSONALITY_TYPES!=="undefined"?PERSONALITY_TYPES[c.personality]:null;const pBadge=pt2?`<span class="ctrait" style="background:${pt2.color}18;color:${pt2.color};border:1px solid ${pt2.color}33">${pt2.icon} ${pt2.label}</span>`:"";
 const tags=(c.skillTags||[]).map(t=>`<span class="cand-tag">${t}</span>`).join("");
 const casesCanDo=(s.availableCases||[]).filter(cas=>c.skill>=(cas.requiredSkill||1)&&((cas.requiredTags||[]).length===0||(c.skillTags||[]).some(t=>(cas.requiredTags||[]).includes(t))));
 const caseMatch=casesCanDo.length>0?`<div class="cand-case-match">📋 今月の案件 ${casesCanDo.length}件に対応可能</div>`:`<div class="cand-case-match warn">⚠ 今月の案件に対応できるものがありません</div>`;
-return`<div class="cand-card ${c.negotiationResult==='refused'?'refused':''}" data-cid="${c.id}"><div class="cand-portrait">${Portrait.generate(c)}</div><div class="cand-info"><div class="cand-name">${c.name} <span class="cand-age">${c.age||"?"}歳</span></div><div class="cand-type">${c.typeName} / 経験${c.exp}年 / ${"★".repeat(c.skill)}</div><div class="cand-tags">${tags}</div><div class="cand-nums"><span class="cn blue">希望¥${Math.round(c.salaryAsk/10000)}万</span><span class="cn muted">最低¥${Math.round((c.salaryMin||c.salary*0.85)/10000)}万</span><span class="cn yellow"> 粗利<b>${Math.round(mg/10000)}万</b><span style="font-size:10px;color:rgba(255,255,255,.55);display:block">単価${Math.round((c.billingRate||0)/10000)}万−給与${Math.round(c.salary/10000)}万/月</span></span></div><div class="cand-traits">${pBadge}${tr}</div>${caseMatch}${c.negotiationResult==='refused'?`<div class="nego-refused">⚠ 交渉決裂 - 別の候補者を選んでください</div>`:""}</div></div>`;}).join("");
+return`<div class="cand-card ${c.negotiationResult==='refused'?'refused':''}" data-cid="${c.id}"><div class="cand-portrait">${Portrait.generate(c)}</div><div class="cand-info"><div class="cand-name">${c.name} <span class="cand-age">${c.age||"?"}歳</span></div><div class="cand-type">${c.typeName} / 経験${c.exp}年 / ${"★".repeat(c.skill)}</div><div class="cand-tags">${tags}</div><div class="cand-nums"><span class="cn blue">希望¥${Math.round(c.salaryAsk/10000)}万</span><span class="cn muted">最低¥${Math.round((c.salaryMin||c.salary*0.85)/10000)}万</span></div><div class="cand-traits">${pBadge}${tr}</div>${caseMatch}${c.negotiationResult==='refused'?`<div class="nego-refused">⚠ 交渉決裂 - 別の候補者を選んでください</div>`:""}</div></div>`;}).join("");
 return`<div class="modal-overlay"><div class="modal"><h2>候補者を選ぶ</h2><p class="modal-sub">${ch.name||""} · ${ch.cost===0?"無料":"¥"+Math.round((ch.cost||0)/10000)+"万"}</p><div class="cand-list" id="cand-list">${items}</div><div class="modal-foot"><button id="btn-modal-close" class="btn btn-ghost">キャンセル</button><div class="nego-btns" id="nego-btns" style="display:none"><div class="nego-label">💼 給与交渉オプション</div><button id="btn-nego-full" class="btn btn-success nego-btn"><div class="nb-left"><span class="nbi">✓</span><span class="nbt">希望額で採用</span></div><span class="nbp" style="background:rgba(0,212,170,0.2);color:#00d4aa">確率 100%</span></button><button id="btn-nego-mid" class="btn btn-primary nego-btn"><div class="nb-left"><span class="nbi">⚡</span><span class="nbt">交渉する<small> (-15%)</small></span></div><span class="nbp" style="background:rgba(58,145,218,0.2);color:#7ab8f5">🎲 確率 80%</span></button><button id="btn-nego-low" class="btn nego-btn" style="background:rgba(255,165,0,0.1);border:1px solid rgba(255,165,0,0.3);color:#ffa500"><div class="nb-left"><span class="nbi">🎲</span><span class="nbt">低額オファー<small> (-30%)</small></span></div><span class="nbp" style="background:rgba(255,165,0,0.15);color:#ffa500">🎲 確率 40%</span></button></div></div><div id="dice-overlay" style="display:none;position:absolute;inset:0;background:rgba(6,8,18,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;border-radius:16px;z-index:10"><div class="dice-label" id="dice-label">交渉中...</div><div class="dice-num" id="dice-num">??</div><div class="dice-bar-wrap"><div class="dice-bar" id="dice-bar"></div><div class="dice-threshold" id="dice-threshold"></div></div><div class="dice-result" id="dice-result"></div><button id="dice-close" class="btn btn-primary" style="display:none;margin-top:16px">続ける →</button></div></div></div>`;}
 
 const bp=s.brandPoints||0;
@@ -386,15 +386,20 @@ document.querySelectorAll(".btn-leave-project").forEach(btn=>{btn.onclick=()=>{
 document.querySelectorAll(".btn-decline").forEach(btn=>{btn.onclick=()=>{
   const cid=parseInt(btn.dataset.declineId);
   const trust=parseInt(btn.dataset.trust)||3;
+  // \u30a2\u30af\u30b7\u30e7\u30f3\u4e0d\u8db3\u30c1\u30a7\u30c3\u30af
+  if(s.actionsRemaining<=0){Sound.play('warn');alert('\u30a2\u30af\u30b7\u30e7\u30f3\u304c\u4e0d\u8db3\u3057\u3066\u3044\u307e\u3059\u3002\u6848\u4ef6\u3092\u65ad\u308b\u306b\u306f\u30a2\u30af\u30b7\u30e7\u30f3\u304c1\u5fc5\u8981\u3067\u3059\u3002');return;}
   if(trust>=5){
-    if(!confirm(`⚠ 信頼度MAX「信用力-12pt」\n\nこのクライアントのオファーを断ると業界での評判が大きく下がります。\n本当に断りますか？`))return;
+    if(!confirm('\u26a0 \u4fe1\u983c\u5ea6MAX\u300c\u4fe1\u7528\u529b-12pt\u300d\n\n\u3053\u306e\u30af\u30e9\u30a4\u30a2\u30f3\u30c8\u306e\u30aa\u30d5\u30a1\u30fc\u3092\u65ad\u308b\u3068\u696d\u754c\u3067\u306e\u8a55\u5224\u304c\u5927\u304d\u304f\u4e0b\u304c\u308a\u307e\u3059\u3002\n\u672c\u5f53\u306b\u65ad\u308a\u307e\u3059\u304b\uff1f'))return;
   }else if(trust>=4){
-    if(!confirm(`⚠ 信頼度の高いオファー「信用力-7pt」\n\nこのオファーを断ると会社の信用力が少し下がります。\n本当に断りますか？`))return;
+    if(!confirm('\u26a0 \u4fe1\u983c\u5ea6\u306e\u9ad8\u3044\u30aa\u30d5\u30a1\u30fc\u300c\u4fe1\u7528\u529b-7pt\u300d\n\n\u3053\u306e\u30aa\u30d5\u30a1\u30fc\u3092\u65ad\u308b\u3068\u4f1a\u793e\u306e\u4fe1\u7528\u529b\u304c\u5c11\u3057\u4e0b\u304c\u308a\u307e\u3059\u3002\n\u672c\u5f53\u306b\u65ad\u308a\u307e\u3059\u304b\uff1f'))return;
+  } else {
+    if(!confirm('\u300c\u6848\u4ef6\u3092\u65ad\u308b\u300d\u3068\u30a2\u30af\u30b7\u30e7\u30f3\u30921\u6d88\u8cbb\u3057\u307e\u3059\u3002\u672c\u5f53\u306b\u898b\u9001\u308a\u307e\u3059\u304b\uff1f'))return;
   }
-  Sound.play("warn");
+  Sound.play('warn');
+  s.actionsRemaining = Math.max(0, s.actionsRemaining - 1); // \u898b\u9001\u308a\u3067\u30a2\u30af\u30b7\u30e7\u30f3\u6d88\u8cbb
   game.declineCase(cid);
   this.render(game);
-};});
+};});;
 document.querySelectorAll(".btn-fire-eng").forEach(btn=>{btn.onclick=()=>{const eid=parseInt(btn.dataset.engId);const eng=game.state.engineers.find(e=>e.id===eid);if(!eng)return;if(!confirm(`${eng.name}\u3092\u89e3\u96c7\u3057\u307e\u3059\u304b\uff1f\n\u9000\u8077\u91d1\uff1a\u00a5${Math.round(eng.salary/10000)}\u4e07\u5186\uff081\u304b\u6708\u5206\uff09`))return;const r=game.fireEngineer(eid);if(r&&r.ok){Sound.play("alert");this.render(game);}else if(r){Sound.play("warn");alert(r.msg);}};});
 document.querySelectorAll(".btn-assign").forEach(btn=>{
   btn.onclick=()=>{
