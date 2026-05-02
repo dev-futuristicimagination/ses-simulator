@@ -55,7 +55,7 @@ return`<div class="game-layout">
 <header class="game-header" style="background:linear-gradient(180deg,rgba(6,8,18,.95) 0%,rgba(6,8,18,.88) 100%),url('img/office_bg.png') center/cover no-repeat;">
 <div class="gh-top">
 <div class="gh-left"><div class="co-name">${s.companyName} <span class="market-pill" style="background:${mkColors[s.marketCondition||'normal']}">${mkLabel}</span></div><div class="co-meta">${s.year}年${this.m(s.month)} · ${loc.icon}${loc.name}</div></div>
-<div class="gh-right"><div class="actions-badge">残 <span>${s.actionsRemaining}</span>/${s.actionsPerMonth}</div><button id="btn-end-month" class="btn btn-primary">月次決算 →</button></div>
+<div class="gh-right"><div class="actions-badge">残 <span>${s.actionsRemaining}</span>/${s.actionsPerMonth}</div><button id="btn-end-month" class="btn btn-primary${s.actionsRemaining===0?" btn-pulse-urgent":""}">月次決算 →</button></div>
 </div>
 <div class="gh-stats">
 <div class="gh-stat${moneyDanger?" danger":""}"><div class="gsv">${moneyDanger?"⚠ ":""}¥${Math.round(s.money/10000)}万</div><div class="gsl">手元資金</div></div>
@@ -106,12 +106,13 @@ engRow(eng,game){
   const canAct=s.actionsRemaining>0&&!eng.isSelf&&eng.status==="waiting";
   const acts=canAct?`<div class="er-acts"><button class="btn-eng-assign btn btn-xs btn-primary" data-eng-id="${eng.id}">\u2192\u6848\u4ef6</button>${(eng.skill||0)<3?`<button class="btn btn-xs btn-train" data-eng-id="${eng.id}" style="background:rgba(125,211,252,.1);border:1px solid rgba(125,211,252,.3);color:#7dd3fc">\ud83d\udcda\u80b2\u6210</button>`:""}</div>`:"";
   const dangerBadge=d>=70?`<div class="er-danger-label">\ud83d\udea8 \u9000\u8077\u5371\u967a</div>`:d>=50?`<div class="er-danger-label" style="color:#ffd600">\u26a0 \u96e2\u8077\u30ea\u30b9\u30af</div>`:"";
+  const fireBtn=(!eng.isSelf&&eng.status==="waiting")?`<button class="btn-fire-eng btn btn-xs" data-eng-id="${eng.id}" style="background:rgba(233,69,96,.1);border:1px solid rgba(233,69,96,.3);color:#e94560;margin-top:4px">\ud83d\udd34 \u89e3\u96c7</button>`:"";
   return`<div class="eng-row${d>=70?" er-crit":""}" data-estatus="${eng.status}">
 ${por}<div class="er-body">
 <div class="er-top"><span class="er-name">${eng.name}${eng.isSelf?`<span class='crown'>\ud83d\udc51</span>`:""}</span>${pBadge}${sdot}</div>
 <div class="er-mid"><span class="er-type">${eng.typeName}</span><span class="er-sal">\u00a5${Math.round(eng.salary/10000)}\u4e07</span><span class="er-sk">${"\u2605".repeat(eng.skill||0)}${"\u2606".repeat(5-(eng.skill||0))}</span></div>
 <div class="er-bars"><div class="er-dbar-wrap" title="\u4e0d\u6e80${d}%"><div class="er-dbar" style="width:${d}%;background:${dc}"></div></div><span class="er-stress" style="color:${sc}">\ud83d\ude24${stress}%</span></div>
-${infoLine}${dangerBadge}${acts}
+${infoLine}${dangerBadge}${acts}${fireBtn}
 </div></div>`},caseCard(cas,state,isActive){
 const tc={direct:"type-direct",primary:"type-primary",secondary:"type-secondary",tertiary:"type-tertiary"}[cas.type]||"";
 const pct=Math.min(100,Math.round(cas.billingCurrent/1300000*100));
@@ -285,6 +286,7 @@ document.querySelectorAll(".btn-decline").forEach(btn=>{btn.onclick=()=>{
   game.declineCase(cid);
   this.render(game);
 };});
+document.querySelectorAll(".btn-fire-eng").forEach(btn=>{btn.onclick=()=>{const eid=parseInt(btn.dataset.engId);const eng=game.state.engineers.find(e=>e.id===eid);if(!eng)return;if(!confirm(`${eng.name}\u3092\u89e3\u96c7\u3057\u307e\u3059\u304b\uff1f\n\u9000\u8077\u91d1\uff1a\u00a5${Math.round(eng.salary/10000)}\u4e07\u5186\uff081\u304b\u6708\u5206\uff09`))return;const r=game.fireEngineer(eid);if(r&&r.ok){Sound.play("alert");this.render(game);}else if(r){Sound.play("warn");alert(r.msg);}};});
 document.querySelectorAll(".btn-assign").forEach(btn=>{
   btn.onclick=()=>{
     if(btn.disabled)return;

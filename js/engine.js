@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // engine.js - ゲームロジック
 // ============================================================
 
@@ -715,6 +715,20 @@ class SESGame {
   }
 
   // ─── 契約更新解決 ───
+  // エンジニア解雇（待機中のみ）
+  fireEngineer(engineerId) {
+    const st = this.state;
+    const eng = st.engineers.find(e => e.id === engineerId);
+    if (!eng) return { ok: false, msg: '\u30a8\u30f3\u30b8\u30cb\u30a2\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093' };
+    if (eng.isSelf) return { ok: false, msg: '\u81ea\u5206\u81ea\u8eab\u306f\u89e3\u96c7\u3067\u304d\u307e\u305b\u3093' };
+    if (eng.status === 'working') return { ok: false, msg: '\u7a3c\u50cd\u4e2d\u306e\u30a8\u30f3\u30b8\u30cb\u30a2\u306f\u89e3\u96c7\u3067\u304d\u307e\u305b\u3093\u3002\u5148\u306b\u9000\u30d7\u30ed\u3057\u3066\u304f\u3060\u3055\u3044' };
+    const severance = eng.salary; // 1ヶ月分退職金
+    st.money -= severance;
+    eng.status = 'gone';
+    this.addLog('bad', `\u2716 ${eng.name}\uff08${eng.typeName}\uff09\u3092\u89e3\u96c7\u3002\u9000\u8077\u91d1\u00a5${Math.round(severance/10000)}\u4e07`);
+    return { ok: true };
+  }
+
   resolveContractExpiry(caseId, choice, param = {}) {
     const st = this.state;
     const cas = st.activeCases.find(c => c.id === caseId && c.contractExpiry);
