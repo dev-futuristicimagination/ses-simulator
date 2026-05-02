@@ -1,4 +1,4 @@
-// SES-SIM v1.4 build:202605030632
+﻿// SES-SIM v1.4 build:202605030632
 const UI={modal:null,selCase:null,selEng:null,selCand:null,
 render(game){const s=game.state,app=document.getElementById("app");app.innerHTML="";
 try{switch(s.phase){
@@ -581,12 +581,25 @@ ${s.bankRepayment>0?`<div class="pnl-r"><span>\u9280\u884c\u8fd4\u6e08</span><sp
 ${profit<0?`<div class="me-warn">\u26a0 \u4eca\u6708\u306f\u8d64\u5b57\u3067\u3059</div>`:""}
 ${sum.bankrupt?`<div class="me-warn">\ud83d\udc80 \u8cc7\u91d1\u30bc\u30ed\u3067\u5012\u7523</div>`:""}
 <div class="me-actions">
-${sum.bankrupt?`<button id="btn-gameover" class="btn btn-primary">\u7d50\u679c\u3092\u898b\u308b</button>`:sum.contractReviews&&sum.contractReviews.length>0?`<button id="btn-contract-review" class="btn btn-primary" style="background:linear-gradient(135deg,#f7971e,#ffd200);color:#111">\ud83d\udccb \u5951\u7d04\u66f4\u65b0\u78ba\u8a8d (${sum.contractReviews.length}\u4ef6) \u2192</button>`:s.pendingEvent?`<button id="btn-show-event" class="btn btn-primary" style="background:linear-gradient(135deg,#e94560,#c0392b)">\u26a1 \u30a4\u30d9\u30f3\u30c8\u767a\u751f\uff01</button>`:`<button id="btn-next-month" class="btn btn-success">\u6765\u6708\u3078 \u2192</button>`}
+${sum.bankrupt?`<button id="btn-gameover" class="btn btn-primary">\u7d50\u679c\u3092\u898b\u308b</button>`:sum.contractReviews&&sum.contractReviews.length>0?`<button id="btn-contract-review" class="btn btn-primary" style="background:linear-gradient(135deg,#f7971e,#ffd200);color:#111">\ud83d\udccb \u5951\u7d04\u66f4\u65b0\u78ba\u8a8d (${sum.contractReviews.length}\u4ef6) \u2192</button>`:`<button id="btn-next-month" class="btn btn-success${s.pendingEvent?' btn-pulse-urgent':''}">${s.pendingEvent?'\u26a1 ':''}翌月へ →</button>`}
 </div></div></div>`},
 bMEnd(game){const s=game.state,sum=s.monthEndSummary;
-const nx=document.getElementById("btn-next-month");if(nx)nx.onclick=()=>{Sound.play("next");game.nextMonth();const _sv=game.saveGame();if(!_sv.ok)console.warn('\u30bb\u30fc\u30d6\u5931\u6557:',_sv.msg);this.render(game);};
-const go=document.getElementById("btn-gameover");if(go)go.onclick=()=>{Sound.play("defeat");s.phase="bankrupt";this.render(game);};
-const ev=document.getElementById("btn-show-event");if(ev)ev.onclick=()=>{Sound.play("alert");document.getElementById("app").innerHTML=this.evScreen(s.pendingEvent,game);this.bEvScreen(game);};
+const nx=document.getElementById('btn-next-month');
+if(nx)nx.onclick=()=>{
+  Sound.play('next');
+  // pendingEventがあれば自動でイベント画面へ
+  if(s.pendingEvent){
+    Sound.play('alert');
+    document.getElementById('app').innerHTML=this.evScreen(s.pendingEvent,game);
+    this.bEvScreen(game);
+    return;
+  }
+  game.nextMonth();
+  const _sv=game.saveGame();if(!_sv.ok)console.warn('\u30bb\u30fc\u30d6\u5931\u6557:',_sv.msg);
+  this.render(game);
+};
+const go=document.getElementById('btn-gameover');if(go)go.onclick=()=>{Sound.play('defeat');s.phase='bankrupt';this.render(game);};
+// btn-show-eventは廃止（翌月ボタンが代替）
 const cr=document.getElementById("btn-contract-review");
 if(cr)cr.onclick=()=>{
   Sound.play("click");
