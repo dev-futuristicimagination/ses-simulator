@@ -106,13 +106,13 @@ return`<div class="game-layout">
 <div class="gh-progress"><div class="gp-label"><span>年商1億目標</span><span class="gp-pct ${prog>=75?'gp-near':prog>=50?'gp-half':''}">${prog}%</span></div><div class="gp-bar"><div class="gp-fill" style="width:${prog}%"></div></div></div>
 </div>
 <div class="gh-actions">
-<button id="btn-do-sales" class="gh-act-btn sales" title="\u55b6\u696d\u30a2\u30af\u30b7\u30e7\u30f3\uff081\u6d88\u8cbb\uff09">📣<span>\u55b6\u696d</span><small class="act-rate" style="color:#00d4aa">\u78ba\u5b9f</small></button>
-<button id="btn-cloud-work" class="gh-act-btn cloud" title="\u30af\u30e9\u30a6\u30c9\u30bd\u30fc\u30b7\u30f3\u30b0">💻<span>\u30af\u30e9\u30a6\u30c9</span><small class="act-rate" style="color:#00d4aa">\u78ba\u5b9f</small></button>
+<button id="btn-do-sales" class="gh-act-btn sales" title="\u55b6\u696d\u30a2\u30af\u30b7\u30e7\u30f3\uff081\u6d88\u8cbb\uff09">📣<span>\u55b6\u696d</span><small class="act-rate" style="color:${_rc(_salesRate)}">${_salesRate}%</small></button>
+<button id="btn-cloud-work" class="gh-act-btn cloud" title="\u30af\u30e9\u30a6\u30c9\u30bd\u30fc\u30b7\u30f3\u30b0">💻<span>\u30af\u30e9\u30a6\u30c9</span><small class="act-rate" style="color:${_rc(_cloudRate)}">${_cloudRate}%</small></button>
 <button id="btn-sns-post" class="gh-act-btn sns" title="SNS\u6295\u7a3f\uff082\u56de/\u6708\uff09\u2022\u30d0\u30ba\u308b\u304b\u3069\u3046\u304b">📢<span>SNS</span><small class="act-rate" style="color:${_rc(_snsRate)}">${_snsRate}%</small></button>
 <button id="btn-blog-post" class="gh-act-btn blog" title="\u30d6\u30ed\u30b0\u8a18\u4e8b\u2022\u6280\u8853\u529b\u9ad8\u3044\u307b\u3069\u53cd\u97ff\u5927">✍<span>\u30d6\u30ed\u30b0</span><small class="act-rate" style="color:${_rc(_blogRate)}">${_blogRate}%</small></button>
 <button id="btn-network" class="gh-act-btn network" title="\u696d\u754c\u4ea4\u6d41\u4f1a\u30fb\u98f2\u307f\u4f1a\uff085\u4e07\u5186\uff09">🍺<span>\u4ea4\u6d41\u4f1a</span><small class="act-rate" style="color:${_rc(_netRate)}">${_netRate}%</small></button>
 <button id="btn-exhibition" class="gh-act-btn exhibition" title="\u5c55\u793a\u4f1a\u30fb\u540d\u523a\u4ea4\u63db\uff083\u4e07\u5186\uff09">💼<span>\u5c55\u793a\u4f1a</span><small class="act-rate" style="color:${_rc(_exRate)}">${_exRate}%</small></button>
-<button id="btn-tech-train" class="gh-act-btn tech" title="\u5168\u30a8\u30f3\u30b8\u30cb\u30a2\u6280\u8853\u7814\u4fee\u300030\u4e07\u5186">🔬<span>\u6280\u8853\u7814\u4fee</span><small class="act-rate" style="color:#00d4aa">\u78ba\u5b9f</small></button>
+<button id="btn-tech-train" class="gh-act-btn tech" title="\u5168\u30a8\u30f3\u30b8\u30cb\u30a2\u6280\u8853\u7814\u4fee\u300030\u4e07\u5186">🔬<span>\u6280\u8853\u7814\u4fee</span><small class="act-rate" style="color:${_rc(_trainRate)}">${_trainRate}%</small></button>
 </div>
 </header>
 <div class="game-body">

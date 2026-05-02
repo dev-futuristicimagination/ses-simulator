@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // engine.js - ゲームロジック
 // ============================================================
 
@@ -128,22 +128,32 @@ class SESGame {
   // ─── クラウドソーシング ───
   doCloudWork() {
     const st = this.state;
-    if (st.actionsRemaining <= 0) return {ok:false, msg:'\u30a2\u30af\u30b7\u30e7\u30f3\u304c\u4e0d\u8db3\u3057\u3066\u3044\u307e\u3059'};
+    if (st.actionsRemaining <= 0) return {ok:false, msg:'\u30a2\u30af\u30b7\u30e7\u30f3\u304c\u4e0d\u8db3'};
     st.actionsRemaining--;
     const tech = this.getTechPower();
-    // 技術力が高いほど高単価案件を受けられる
-    const baseEarn = 30000 + tech * 8000;
-    const earn = Math.floor(baseEarn * (0.7 + Math.random() * 0.6));
-    st.money += earn;
-    st.cumulativeRevenue = (st.cumulativeRevenue||0) + earn;
+    // 技術力が高いほど成功しやすい 30〝75%
+    const successChance = 0.30 + Math.min(0.45, tech * 0.05);
+    const success = Math.random() < successChance;
     const tasks = [
-      '\u30e9\u30f3\u30b5\u30fc\u30ba\u3067LP\u5236\u4f5c\u6848\u4ef6', 'Coconala\u3067\u30b7\u30b9\u30c6\u30e0\u8a2d\u8a08\u76f8\u8ac7',
-      '\u30af\u30e9\u30a6\u30c9\u30ef\u30fc\u30af\u3067\u30c7\u30fc\u30bf\u5206\u6790', 'CrowdWorks\u3067\u30a2\u30d7\u30ea\u958b\u767a',
-      '\u30e9\u30f3\u30b5\u30fc\u30ba\u3067API\u9023\u643a\u69cb\u7bc9', 'Coconala\u3067\u30b3\u30fc\u30c9\u30ec\u30d3\u30e5\u30fc'
+      '\u30e9\u30f3\u30b5\u30fc\u30ba\u98a8LP\u5236\u4f5c', '\u30b3\u30b3\u30ca\u30e9\u98a8\u30b7\u30b9\u30c6\u30e0\u8a2d\u8a08',
+      '\u30af\u30e9\u30a6\u30c9\u30ef\u30fc\u30af\u98a8\u30c7\u30fc\u30bf\u5206\u6790', '\u30b3\u30fc\u30c9\u30ef\u30fc\u30af\u98a8\u30a2\u30d7\u30ea\u958b\u767a',
+      '\u30e9\u30f3\u30b5\u30fc\u30ba\u98a8API\u9023\u643a', '\u30b3\u30b3\u30ca\u30e9\u98a8\u30b3\u30fc\u30c9\u30ec\u30d3\u30e5\u30fc'
     ];
     const task = tasks[Math.floor(Math.random()*tasks.length)];
-    this.addLog('good', `\ud83d\udcbb ${task}\u3067\u5831\u916c\u7372\u5f97\uff01+${Math.round(earn/10000)}\u4e07\u5186`);
-    return {ok:true, earn};
+    if (success) {
+      const baseEarn = 30000 + tech * 8000;
+      const earn = Math.floor(baseEarn * (0.7 + Math.random() * 0.6));
+      st.money += earn;
+      st.cumulativeRevenue = (st.cumulativeRevenue||0) + earn;
+      this.addLog('good', `\ud83d\udcbb ${task}\u6848\u4ef6\u6210\u529f\uff01+${Math.round(earn/10000)}\u4e07\u5186`);
+      return {ok:true, success:true, earn};
+    } else {
+      // 失\u6557: \u30af\u30e9\u30a4\u30a2\u30f3\u30c8\u4e0d\u6210\u7acb\u3001\u308f\u305a\u304b\u306a\u8fd4\u91d1
+      const consolation = Math.floor(5000 + Math.random() * 10000);
+      st.money += consolation;
+      this.addLog('neutral', `\ud83d\udcbb ${task}\u2026\u30af\u30e9\u30a4\u30a2\u30f3\u30c8\u4e0d\u6210\u7acb\u3002\u6280\u8853\u529b\u4e0d\u8db3\u304b\u3082\u3002\u7279\u5225\u5831\u916c+${Math.round(consolation/1000)}\u5343\u5186`);
+      return {ok:true, success:false, earn:consolation};
+    }
   }
 
   // ─── SNS投稿 ───
@@ -156,9 +166,9 @@ class SESGame {
     const bp = 8 + Math.floor(Math.random()*7);
     st.brandPoints = Math.min(100, (st.brandPoints||0) + bp);
     const posts = [
-      'X(Twitter)\u306b\u6280\u8853\u30d6\u30ed\u30b0\u3092\u30b7\u30a7\u30a2', 'Qiita\u306b\u8a18\u4e8b\u3092\u6295\u7a3f',
-      'LinkedIn\u3067\u5b9f\u7e3e\u3092\u30a2\u30d4\u30fc\u30eb', 'Zenn\u306b\u30a2\u30fc\u30ad\u30c6\u30af\u30c1\u30e3\u8a18\u4e8b\u6295\u7a3f',
-      'Note\u3067\u5c40\u671f\u52d9\u3092\u516c\u958b', 'YouTube\u306b\u6280\u8853\u89e3\u8aac\u52d5\u753b\u3092\u6295\u7a3f'
+      '\u30dd\u30b9\u30c8X\u306b\u6280\u8853\u30c4\u30a4\u30fc\u30c8', '\u30ad\u30fc\u30bf\u306b\u8a18\u4e8b\u6295\u7a3f',
+      '\u30ea\u30f3\u30af\u30c9\u30a4\u30f3\u3067\u5b9f\u7e3e\u3092\u30a2\u30d4\u30fc\u30eb', '\u30c7\u30d6\u30bc\u30f3\u306b\u30a2\u30fc\u30ad\u8a18\u4e8b\u6295\u7a3f',
+      'N\u00f8te\u3067\u5c40\u671f\u52d9\u516c\u958b', '\u30c6\u30c3\u30af\u30c1\u30e5\u30fc\u30d6\u306b\u52d5\u753b\u6295\u7a3f'
     ];
     const p = posts[Math.floor(Math.random()*posts.length)];
     this.addLog('good', `\ud83d\udce3 ${p}\uff01\u30d6\u30e9\u30f3\u30c9+${bp}pt \u30fb \u8a8d\u77e5\u5ea6UP`);
@@ -181,6 +191,62 @@ class SESGame {
     }
     this.addLog('good', `\u270d\ufe0f \u6280\u8853\u30d6\u30ed\u30b0\u3092\u516c\u958b\uff01\u30d6\u30e9\u30f3\u30c9+${bp}pt${inboundBonus?' (\u6848\u4ef6\u5f15\u304d\u5bc4\u305b\u52b9\u679c\uff01)':''}`);
     return {ok:true, bp, brandPoints: st.brandPoints, inboundBonus};
+  }
+
+  // ─── 業界交流会（営業力+信用力UP）───
+  doNetworkEvent() {
+    const st = this.state;
+    if (st.actionsRemaining <= 0) return {ok:false, msg:'\u30a2\u30af\u30b7\u30e7\u30f3\u304c\u4e0d\u8db3'};
+    const cost = 50000;
+    if (st.money < cost) return {ok:false, msg:'\u8cc7\u91d1\u4e0d\u8db3\uff085\u4e07\u5186\u5fc5\u8981\uff09'};
+    st.actionsRemaining--;
+    st.money -= cost;
+    const cred = this.getCredibility();
+    const successChance = 0.45 + Math.min(0.35, cred * 0.004);
+    const success = Math.random() < successChance;
+    const events = ['SES\u696d\u754c\u306e\u98f2\u307f\u4f1a','IT\u30a8\u30f3\u30b8\u30cb\u30a2\u4ea4\u6d41\u4f1a','\u30c6\u30c3\u30af\u30df\u30fc\u30c8\u30a2\u30c3\u30d7','\u696d\u754c\u52d5\u5411\u52c9\u5f37\u4f1a','\u30cd\u30c3\u30c8\u30ef\u30fc\u30af\u30a4\u30d9\u30f3\u30c8'];
+    const ev = events[Math.floor(Math.random()*events.length)];
+    if (success) {
+      // 営業力: 今月のsalesBoostを+1（案件発見数増加）
+      st.salesBoostThisMonth = (st.salesBoostThisMonth||0) + 1;
+      // 信用力: 恒久的にcredibilityをUP
+      const credGain = 4 + Math.floor(Math.random()*8);
+      st.credibility = Math.min(100, (st.credibility||0) + credGain);
+      let inbound = false;
+      if (Math.random() < 0.3) { st.salesBoostThisMonth++; inbound = true; }
+      this.addLog('good', `\ud83e\udd1d ${ev}\u3067\u826f\u3044\u4eba\u8108\u3092\u5f97\u305f\uff01\u55b6\u696d\u529bUP \u4fe1\u7528\u529b+${credGain}pt${inbound?' \ud83d\udce8 \u6848\u4ef6\u5f15\u304d\u5bc4\u305b':''}`);
+      return {ok:true, success:true, credGain, inbound, cost, event:ev};
+    } else {
+      this.addLog('neutral', `\ud83c\udf7a ${ev}\u53c2\u52a0\u3002\u76ee\u7acb\u3063\u305f\u6210\u679c\u306a\u3057\u3002\u30b3\u30b9\u30c85\u4e07\u304b\u304b\u3063\u305f\u3002`);
+      return {ok:true, success:false, cost, event:ev};
+    }
+  }
+
+  // ─── 展示会/名刺交換会（営業力UP）───
+  doExhibition() {
+    const st = this.state;
+    if (st.actionsRemaining <= 0) return {ok:false, msg:'\u30a2\u30af\u30b7\u30e7\u30f3\u304c\u4e0d\u8db3'};
+    const cost = 30000;
+    if (st.money < cost) return {ok:false, msg:'\u8cc7\u91d1\u4e0d\u8db3\uff083\u4e07\u5186\u5fc5\u8981\uff09'};
+    st.actionsRemaining--;
+    st.money -= cost;
+    const successChance = 0.55 + Math.min(0.25, (st.brandPoints||0)*0.003);
+    const success = Math.random() < successChance;
+    if (success) {
+      // 営業力: 今月+1〜2ブースト
+      const salesBoost = Math.random() < 0.4 ? 2 : 1;
+      st.salesBoostThisMonth = (st.salesBoostThisMonth||0) + salesBoost;
+      // ブランドPtも少し
+      const bpGain = 5 + Math.floor(Math.random()*8);
+      st.brandPoints = Math.min(100, (st.brandPoints||0) + bpGain);
+      this.addLog('good', `\ud83d\udcbc \u5c55\u793a\u4f1a\u6210\u529f\uff01\u55b6\u696d\u529b+${salesBoost} \u30d6\u30e9\u30f3\u30c9+${bpGain}pt`);
+      return {ok:true, success:true, salesBoost, bpGain, cost};
+    } else {
+      const bpGain = 2 + Math.floor(Math.random()*4);
+      st.brandPoints = Math.min(100, (st.brandPoints||0) + bpGain);
+      this.addLog('neutral', `\ud83d\udcbc \u5c55\u793a\u4f1a\u53c2\u52a0\u3002\u30d6\u30e9\u30f3\u30c9+${bpGain}pt\uff08\u55b6\u696d\u6210\u679c\u306a\u3057\uff09`);
+      return {ok:true, success:false, bpGain, cost};
+    }
   }
 
   // ─── 営業力計算 ───
@@ -263,43 +329,69 @@ class SESGame {
     st.availableCases = newCases;
   }
 
-  // 営業活動アクション（当月のみ有効）
+  // 営業活動アクション（成功/失敗あり）
   doSalesActivity() {
     const st = this.state;
-    if (st.actionsRemaining <= 0) return {ok:false, msg:'アクションが不足しています'};
-    const boostAmount = 2;
+    if (st.actionsRemaining <= 0) return {ok:false, msg:'\u30a2\u30af\u30b7\u30e7\u30f3\u304c\u4e0d\u8db3'};
     st.actionsRemaining--;
-    st.salesBoostThisMonth = (st.salesBoostThisMonth || 0) + boostAmount;
-    this.generateAvailableCases();
-    this.addLog('good', `営業活動を実施！今月の案件数が+${boostAmount}されました（現在の営業力: ${this.getSalesPower()}）`);
-    return {ok:true, salesPower: this.getSalesPower()};
+    const sales = this.getSalesPower();
+    // 営業力が高いほど成功しやすい 50〝85%
+    const successChance = 0.50 + Math.min(0.35, (sales - 1) * 0.05);
+    const success = Math.random() < successChance;
+    if (success) {
+      const boostAmount = Math.random() < 0.3 ? 3 : 2;
+      st.salesBoostThisMonth = (st.salesBoostThisMonth || 0) + boostAmount;
+      this.generateAvailableCases();
+      this.addLog('good', `\ud83d\udce3 \u55b6\u696d\u6210\u529f\uff01\u4eca\u6708\u306e\u6848\u4ef6+${boostAmount}\uff08\u55b6\u696d\u529b: ${this.getSalesPower()}\uff09`);
+      return {ok:true, success:true, salesPower: this.getSalesPower()};
+    } else {
+      // 失敗: アポがおれた/歋切れ/タイミング悪い
+      const excuses = ['\u5148\u65b9\u306e\u30bf\u30a4ミングが合わず', '資料準備が足りなかった', 'アポが上手くいかなかった', '競合他社に先を越された'];
+      const ex = excuses[Math.floor(Math.random()*excuses.length)];
+      this.generateAvailableCases();
+      this.addLog('neutral', `\ud83d\udce3 \u55b6\u696d\u6d3b\u52d5\u5b9f\u65bd\u3002${ex}\u3002\u6848\u4ef6\u306f通常通り。`);
+      return {ok:true, success:false, salesPower: this.getSalesPower()};
+    }
   }
 
-  // ─── 技術研修アクション ───
+  // ─── 技術研修アクション（成功/失敗あり）───
   doTechTraining() {
     const st = this.state;
-    if (st.actionsRemaining <= 0) return {ok:false, msg:'アクションが不足しています'};
+    if (st.actionsRemaining <= 0) return {ok:false, msg:'\u30a2\u30af\u30b7\u30e7\u30f3\u304c\u4e0d\u8db3'};
     const cost = 300000;
-    if (st.money < cost) return {ok:false, msg:'資金不足（30万円必要）'};
+    if (st.money < cost) return {ok:false, msg:'\u8cc7\u91d1\u4e0d\u8db3\uff0830\u4e07\u5186\u5fc5\u8981\uff09'};
     const targets = st.engineers.filter(e => e.status !== 'gone' && !e.isSelf);
-    if (targets.length === 0) return {ok:false, msg:'研修対象のエンジニアがいません'};
+    if (targets.length === 0) return {ok:false, msg:'\u7814\u4fee\u5bfe\u8c61\u306e\u30a8\u30f3\u30b8\u30cb\u30a2\u304c\u3044\u307e\u305b\u3093'};
     st.money -= cost;
     st.actionsRemaining--;
+    // 技術力が低いほど研修が有効だが、露骨なエンジニアは不満を持ちやすい
+    const tech = this.getTechPower();
+    const successChance = 0.60 + Math.min(0.30, (5 - Math.min(5, tech * 0.3)) * 0.06);
+    const success = Math.random() < successChance;
     const levelUps = [];
-    targets.forEach(e => {
-      const pt = e.status === 'waiting' ? 25 : 10;
-      e.trainingProgress = (e.trainingProgress || 0) + pt;
-      if (e.trainingProgress >= 100) {
-        e.trainingProgress -= 100;
-        e.skill = Math.min(5, (e.skill || 0) + 1);
-        const up = {1:['\u30c6\u30b9\u30c8','SQL'],2:['Java','Git'],3:['Spring','AWS'],4:['Docker','Terraform']}[e.skill]||[];
-        up.forEach(t => { if (!(e.skillTags||[]).includes(t))(e.skillTags=e.skillTags||[]).push(t); });
-        levelUps.push(e);
-        this.addLog('good', `🎓 ${e.name}のスキルがLv${e.skill}にアップ！（技術研修効果）`);
-      }
-    });
-    this.addLog('good', `🔬 技術研修実施！全${targets.length}名に+スキルポイント。コスト30万。`);
-    return {ok:true, levelUps};
+    if (success) {
+      targets.forEach(e => {
+        const pt = e.status === 'waiting' ? 28 : 12;
+        e.trainingProgress = (e.trainingProgress || 0) + pt;
+        if (e.trainingProgress >= 100) {
+          e.trainingProgress -= 100;
+          e.skill = Math.min(5, (e.skill || 0) + 1);
+          const up = {1:['\u30c6\u30b9\u30c8','SQL'],2:['Java','Git'],3:['Spring','AWS'],4:['Docker','Terraform']}[e.skill]||[];
+          up.forEach(t => { if (!(e.skillTags||[]).includes(t))(e.skillTags=e.skillTags||[]).push(t); });
+          levelUps.push(e);
+          this.addLog('good', `\ud83c\udf93 ${e.name}\u306e\u30b9\u30ad\u30ebLv${e.skill}\u306b\u30a2\u30c3\u30d7\uff01`);
+        }
+      });
+      this.addLog('good', `\ud83d\udd2c \u6280\u8853\u7814\u4fee\u6210\u529f\uff01\u5168${targets.length}\u540d\u306b\u30b9\u30ad\u30eb\u30dd\u30a4\u30f3\u30c8\u4ed8\u4e0e\u3002`);
+      return {ok:true, success:true, levelUps};
+    } else {
+      // 失敗: エンジニアが興味を持たず/内容が適切でなかった
+      targets.forEach(e => {
+        e.trainingProgress = (e.trainingProgress || 0) + 5; // 少しだけ踏み出し
+      });
+      this.addLog('neutral', `\ud83d\udd2c \u7814\u4fee\u5b9f\u65bd\u304c\u30a8\u30f3\u30b8\u30cb\u30a2\u306e\u53cd\u5fdc\u8584\u3080\u2026\u8ca0\u60f3\u304c\u5de6\u53f3\u3057\u305f\u304b\u3002\u6210\u679c\u306f\u6b21\u56de\u4ee5\u964d\u306b\u671f\u5f85\u3002`);
+      return {ok:true, success:false, levelUps:[]};
+    }
   }
   // ─── 育成アクション ───
   trainEngineer(engineerId) {
