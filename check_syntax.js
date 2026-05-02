@@ -1,4 +1,6 @@
 ﻿const fs = require('fs'); const vm = require('vm');
-const code = fs.readFileSync('js/ui.js', 'utf8');
-try { new vm.Script(code); console.log('OK'); }
-catch(e) { console.log('ERROR: ' + e.message); }
+['js/engine.js','js/data.js','js/ui.js'].forEach(f=>{
+  const code = fs.readFileSync(f,'utf8');
+  try { new vm.Script(code); console.log(f + ': OK'); }
+  catch(e) { console.log(f + ' ERROR: ' + e.message + ' line ' + e.lineNumber); }
+});

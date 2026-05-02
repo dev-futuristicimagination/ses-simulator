@@ -846,8 +846,11 @@ class SESGame {
     if (eng.status === 'working') return { ok: false, msg: '\u7a3c\u50cd\u4e2d\u306e\u30a8\u30f3\u30b8\u30cb\u30a2\u306f\u89e3\u96c7\u3067\u304d\u307e\u305b\u3093\u3002\u5148\u306b\u9000\u30d7\u30ed\u3057\u3066\u304f\u3060\u3055\u3044' };
     const severance = eng.salary; // 1ヶ月分退職金
     st.money -= severance;
+    // 解雇は業界口コミで信用力ダウン（スキルが高いほど影響大）
+    const credLoss = 10 + Math.floor((eng.skill||0) * 1.5);
+    st.credibility = Math.max(0, (st.credibility||0) - credLoss);
     eng.status = 'gone';
-    this.addLog('bad', `\u2716 ${eng.name}\uff08${eng.typeName}\uff09\u3092\u89e3\u96c7\u3002\u9000\u8077\u91d1\u00a5${Math.round(severance/10000)}\u4e07`);
+    this.addLog('bad', `\u2716 ${eng.name}\u3092\u89e3\u96c7\u3002\u9000\u8077\u91d1\u00a5${Math.round(severance/10000)}\u4e07 / \u4fe1\u7528\u529b-${credLoss}pt\uff08\u696d\u754c\u53e3\u30b3\u30df\uff09`);
     return { ok: true };
   }
 
@@ -903,7 +906,7 @@ class SESGame {
         }
         cas.monthsLeft = 3; cas.dur += 3; delete cas.contractExpiry;
       } else {
-        this.addLog('bad', `\u274c \u300c${cas.client}\u300d\u306b\u5358\u4fa1UP\u3092\u63d0\u6848\u3057\u307e\u3057\u305f\u304c\u65ad\u3089\u308c\u307e\u3057\u305f\u3002(\u6210\u529f\u7387${Math.round(rate*100)}%)`);
+        this.addLog('bad', `\u274c \u300c${cas.client}\u300d\u306b\u5358\u4fa1UP\u3092\u63d0\u6848\u3057\u307e\u3057\u305f\u304c\u65ad\u3089\u308c\u307e\u3057\u305f\u304c\u3002(\u6210\u529f\u7387${Math.round(rate*100)}%)`);
       }
       return { ok: true, priceUp: true, success: ok, rate: Math.round(rate*100), newBilling: cas.billingCurrent };
     }
@@ -954,6 +957,31 @@ class SESGame {
     if (st.month > 12) { st.month = 1; st.year++; }
     st.actionsRemaining = st.actionsPerMonth;
     this.generateAvailableCases();
+    // ブランド力高いとSNS経由で翁来応募者が自然流入
+    const bp = st.brandPoints || 0;
+    if (bp >= 50) {
+      const inboundChance = Math.min(0.60, (bp - 50) * 0.015);
+      if (Math.random() < inboundChance) {
+        // \u30d6\u30e9\u30f3\u30c9\u529b\u306b\u5fdc\u3058\u305f\u30ec\u30d9\u30eb\u306e\u5019\u88dc\u8005\u3092\u30a4\u30f3\u30e9\u30a4\u30f3\u751f\u6210
+        const lvPool = bp >= 80 ? [3,4] : bp >= 65 ? [2,3] : [1,2];
+        const lv = lvPool[Math.floor(Math.random()*lvPool.length)];
+        const pool = ENGINEER_TEMPLATES.filter(t => t.skill === lv);
+        const tpl = pool.length ? pool[Math.floor(Math.random()*pool.length)] : ENGINEER_TEMPLATES[5];
+        const sn = JAPANESE_SURNAMES[Math.floor(Math.random()*JAPANESE_SURNAMES.length)];
+        const gn = JAPANESE_GIVEN[Math.floor(Math.random()*JAPANESE_GIVEN.length)];
+        const cand = {
+          id: this.nextId(), name: `${sn} ${gn}`, typeName: tpl.typeName, type: tpl.type,
+          skill: tpl.skill, exp: tpl.exp + Math.floor(Math.random()*2), age: tpl.ageBase + Math.floor(Math.random()*5),
+          salary: tpl.salaryBase, salaryAsk: Math.round(tpl.salaryBase*1.05), salaryMin: Math.round(tpl.salaryBase*0.88),
+          billingRate: tpl.billingBase, skillTags:[...(tpl.skillTags||[])], traits:[...(tpl.traits||[])],
+          personality: (tpl.personalityPool||['easygoing'])[Math.floor(Math.random()*(tpl.personalityPool?.length||1))],
+          isInbound: true,
+          inboundNote: 'SNS\u30fb\u30d6\u30ed\u30b0\u7d4c\u7531\u3067\u81ea\u7136\u5fdc\u52df\uff01\u30a2\u30af\u30b7\u30e7\u30f3\u6d88\u8cbb\u306a\u3057\u3067\u9762\u8ac7\u53ef\u80fd'
+        };
+        st.inboundApplicants = [...(st.inboundApplicants||[]), cand];
+        this.addLog('good', `\ud83d\udcec SNS\u30fb\u30d6\u30ed\u30b0\u3092\u898b\u305f${cand.name}(Lv${cand.skill})\u304b\u3089\u81ea\u7136\u5fdc\u52df\uff01\u300c\u6700\u521d\u306e\u4f1a\u793e\u306f\u3053\u3053\u304c\u3044\u3044\u300d\ud83c\udf1f`);
+      }
+    }
     st.phase = 'game';
     st.monthEndSummary = null;
     st.eventOutcome = null;
@@ -1112,11 +1140,41 @@ class SESGame {
         }); break;
       case 'add_cobol_case':
         st.availableCases.push({
-          id:this.nextId(),type:'secondary',typeName:'二次請け',client:'COBOL保守案件',
+          id:this.nextId(),type:'secondary',typeName:'\u4e8c\u6b21\u8acb\u3051',client:'COBOL\u4fdd\u5b88\u6848\u4ef6',
           requiredSkill:1,billing:700000,billingCurrent:700000,dur:3,risk:'low',
-          desc:'COBOL保守・定型作業',status:'available',monthsLeft:3,assignedEngineerId:null,riskFlag:false
+          desc:'COBOL\u4fdd\u5b88\u30fb\u5b9a\u578b\u4f5c\u696d',status:'available',monthsLeft:3,assignedEngineerId:null,riskFlag:false
         }); break;
       case 'vc_pressure': st.vcQuarterlyTarget = Math.floor((st.vcQuarterlyTarget||0)*1.2); break;
+      // SNS\u60aa\u53e3\u30a4\u30d9\u30f3\u30c8
+      case 'credibility_loss_sns': {
+        const loss = 15 + Math.floor(Math.random()*11);
+        st.credibility = Math.max(0, (st.credibility||0) - loss);
+        st.brandPoints = Math.max(0, (st.brandPoints||0) - 5);
+        this.addLog('bad', `\ud83d\udca2 SNS\u60aa\u53e3\u30b9\u30ec\u304c\u62e1\u6563\u3002\u4fe1\u7528\u529b-${loss}pt`);
+        break;
+      }
+      case 'credibility_recover': {
+        const loss2 = 5 + Math.floor(Math.random()*6);
+        st.credibility = Math.max(0, (st.credibility||0) - loss2);
+        st.brandPoints = Math.min(100, (st.brandPoints||0) + 8);
+        this.addLog('neutral', `\ud83d\udcac \u5bfe\u5fdc\u8868\u660e\u3067\u4fe1\u7528\u529b-${loss2}pt\u3060\u304c\u30d6\u30e9\u30f3\u30c9+8pt\u56de\u5fa9\u3002`);
+        break;
+      }
+      // SNS\u30d0\u30ba\u30a4\u30d9\u30f3\u30c8
+      case 'sns_brand_boost': {
+        const bpGain = 18 + Math.floor(Math.random()*12);
+        st.brandPoints = Math.min(100, (st.brandPoints||0) + bpGain);
+        this.addLog('good', `\ud83c\udf1f SNS\u30d0\u30ba\uff01\u30d6\u30e9\u30f3\u30c9+${bpGain}pt\u3002\u6765\u6708\u4ee5\u964d\u5fdc\u52df\u304c\u5897\u3048\u308b\u304b\u3082\u3002`);
+        break;
+      }
+      case 'sns_brand_big_boost': {
+        const bpBig = 28 + Math.floor(Math.random()*12);
+        const credGain = 6 + Math.floor(Math.random()*5);
+        st.brandPoints = Math.min(100, (st.brandPoints||0) + bpBig);
+        st.credibility = Math.min(100, (st.credibility||0) + credGain);
+        this.addLog('good', `\ud83c\udf1f\ud83c\udf1f SNS\u5927\u30d0\u30ba\uff01\u30d6\u30e9\u30f3\u30c9+${bpBig}pt \u4fe1\u7528\u529b+${credGain}pt\u3002`);
+        break;
+      }
       case 'none': default: break;
     }
 

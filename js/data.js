@@ -186,5 +186,17 @@ const EDUCATION_TEXTS = {
     choices:[
       {text:'\u7d20\u76f4\u306b\u8a8d\u3081\u3066\u662f\u6b63\u3059\u308b\uff08-30\u4e07\uff09', effect:'pay_300000', outcome:'\u662f\u6b63\u52e7\u544a\u3092\u53d7\u3051\u305f\u3002\u4fe1\u7528\u306b\u50b7\u304c\u3064\u3044\u305f\u3002'},
       {text:'\u300c\u6e96\u59d4\u4efb\u306e\u5b9f\u614b\u304c\u3042\u308b\u300d\u3068\u4e3b\u5f35\u3059\u308b', effect:'none', outcome:'\u4eca\u56de\u306f\u4e57\u308a\u5207\u3063\u305f\u304c\u3001\u76e3\u8996\u304c\u7d9a\u304f\u3002\u3044\u3064\u304b\u306f\u2026'}]
-    , condition:s=>s.activeCases.some(c=>c.contractType==='disguised'), weight:20, needsEngineer:false, needsActiveCase:false }
+    , condition:s=>s.activeCases.some(c=>c.contractType==='disguised'), weight:20, needsEngineer:false, needsActiveCase:false },
+  { id:'sns_bad_rep', type:'bad', title:'💢 SNSに悪口を書かれた！',
+    getDesc:()=>'元従業員らしき人物が「あの会社はブラック！〝と投稿。会社名入りで書かれ業界に広まりました。',
+    choices:[
+      {text:'公式に対応表明を出す', effect:'credibility_recover', outcome:'対応表明で信用力小幅回復。丫優しの評判には時間がかかる。'},
+      {text:'スルーする（無視）', effect:'credibility_loss_sns', outcome:'何もしなかったが、スレが拡散。'}
+    ], weight:12, needsEngineer:false, needsActiveCase:false },
+  { id:'sns_viral', type:'good', title:'🌟 SNSがバズった！',
+    getDesc:()=>'投稿したテックブログが拡散。DMが段々届いています。',
+    choices:[
+      {text:'応募エンジニアに返信する', effect:'sns_brand_boost', outcome:'ブランド力大幅UP！将来的に悪口への替えになる。'},
+      {text:'標準採用プロセスへ辺り込む', effect:'sns_brand_big_boost', outcome:'ブランド力大幅UPかつ一時的に信用力も上昇。'}
+    ], weight:10, needsEngineer:false, needsActiveCase:false }
 ];
