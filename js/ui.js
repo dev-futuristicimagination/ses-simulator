@@ -1,4 +1,5 @@
-﻿const UI={modal:null,selCase:null,selEng:null,selCand:null,
+﻿// SES-SIM v1.4 build:202605030632
+const UI={modal:null,selCase:null,selEng:null,selCand:null,
 render(game){const s=game.state,app=document.getElementById("app");app.innerHTML="";
 try{switch(s.phase){
 case"title":app.innerHTML=this.title();this.bTitle(game);break;
