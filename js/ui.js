@@ -1,4 +1,4 @@
-﻿// SES-SIM v1.4 build:202605030632
+// SES-SIM v1.4 build:202605030632
 const UI={modal:null,selCase:null,selEng:null,selCand:null,
 render(game){const s=game.state,app=document.getElementById("app");app.innerHTML="";
 try{switch(s.phase){
@@ -528,42 +528,46 @@ const ab=document.getElementById("btn-assign-confirm");if(ab){document.querySele
 const hist=s.finHistory||[];
 const finGraph=(()=>{
   if(hist.length<2) return `<div style="color:var(--muted);font-size:11px;text-align:center;padding:8px">\u30b0\u30e9\u30d5\u306f2\u30f6\u6708\u76ee\u304b\u3089\u8868\u793a\u3055\u308c\u307e\u3059</div>`;
-  const W=340,H=90,pad=30;
-  const maxAbs=Math.max(...hist.map(h=>Math.max(Math.abs(h.revenue||0),Math.abs(h.expenses||0))),1);
-  const yScale=(H-10)/maxAbs;
-  // ゼロライン
-  const zeroY=H-4;
+  const W=340,H=100,pad=32;
   const xStep=(W-pad*2)/Math.max(hist.length-1,1);
-  // 売上折れ線
-  const rPts=hist.map((h,i)=>`${pad+i*xStep},${zeroY-(h.revenue||0)*yScale}`).join(' ');
-  // 損益折れ線
+  // ── 売上：下端(botY)がゼロ、上に伸びる ──
+  const botY=H-4;
+  const maxRev=Math.max(...hist.map(h=>h.revenue||0),1);
+  const revScale=(H*0.6)/maxRev;
+  const rPts=hist.map((h,i)=>`${pad+i*xStep},${Math.max(2,botY-(h.revenue||0)*revScale)}`).join(' ');
+  // ── 損益：中央(midY)がゼロ、黒字↑赤字↓ ──
+  const midY=H*0.60;
+  const maxProfAbs=Math.max(...hist.map(h=>Math.abs(h.profit||0)),1);
+  const profScale=(H*0.26)/maxProfAbs;
   const pPts=hist.map((h,i)=>{
-    const py=zeroY-(h.profit||0)*yScale;
+    const py=midY-(h.profit||0)*profScale;
     return `${pad+i*xStep},${Math.max(2,Math.min(H-2,py))}`;
   }).join(' ');
-  // 最新月のラベル
   const lastH=hist[hist.length-1];
-  const lastPY=Math.max(2,Math.min(H-2,zeroY-(lastH.profit||0)*yScale));
-  const lastRY=Math.max(2,Math.min(H-2,zeroY-(lastH.revenue||0)*yScale));
+  const lastPY=Math.max(4,Math.min(H-4,midY-(lastH.profit||0)*profScale));
+  const lastRY=Math.max(2,Math.min(midY-4,botY-(lastH.revenue||0)*revScale));
   const profitColor=lastH.profit>=0?'#00d4aa':'#e94560';
+  const lastProfit=Math.round((lastH.profit||0)/10000);
+  const lastRev=Math.round((lastH.revenue||0)/10000);
   return `<div style="margin:12px 0 4px">
 <svg width="${W}" height="${H}" style="overflow:visible;display:block;margin:0 auto">
-  <defs>
-    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7ab8f5" stop-opacity="0.7"/><stop offset="100%" stop-color="#7ab8f5" stop-opacity="0.05"/></linearGradient>
-  </defs>
-  <!-- ゼロライン -->
-  <line x1="${pad}" y1="${zeroY}" x2="${W-pad}" y2="${zeroY}" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="3,3"/>
-  <!-- 売上エリア -->
-  <polyline points="${rPts}" fill="none" stroke="#7ab8f5" stroke-width="1.5" opacity="0.7"/>
-  <!-- 損益折れ線 -->
-  <polyline points="${pPts}" fill="none" stroke="${profitColor}" stroke-width="2"/>
+  <!-- 損益ゼロライン（中央・点線） -->
+  <line x1="${pad}" y1="${midY}" x2="${W-pad}" y2="${midY}" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="${pad-4}" y="${midY+3}" font-size="7" fill="rgba(255,255,255,0.35)" text-anchor="end">\u00b10</text>
+  <!-- 売上折れ線（下端ゼロ基準） -->
+  <polyline points="${rPts}" fill="none" stroke="#7ab8f5" stroke-width="1.5" opacity="0.8"/>
+  <!-- 損益折れ線（中央ゼロ基準） -->
+  <polyline points="${pPts}" fill="none" stroke="${profitColor}" stroke-width="2" stroke-linejoin="round"/>
   <!-- 最新値ドット -->
   <circle cx="${pad+(hist.length-1)*xStep}" cy="${lastPY}" r="3.5" fill="${profitColor}"/>
   <circle cx="${pad+(hist.length-1)*xStep}" cy="${lastRY}" r="2.5" fill="#7ab8f5"/>
+  <!-- 最新値ラベル -->
+  <text x="${Math.min(W-pad-2,pad+(hist.length-1)*xStep+5)}" y="${lastRY-3}" font-size="8" fill="#7ab8f5">${lastRev}\u4e07</text>
+  <text x="${Math.min(W-pad-2,pad+(hist.length-1)*xStep+5)}" y="${lastPY+(lastH.profit>=0?-3:10)}" font-size="8" fill="${profitColor}">${lastProfit>=0?'+':''}${lastProfit}\u4e07</text>
 </svg>
 <div style="display:flex;gap:14px;justify-content:center;font-size:10px;color:var(--muted);margin-top:2px">
-  <span><span style="color:#7ab8f5">\u2014</span> \u58f2\u4e0a</span>
-  <span><span style="color:${profitColor}">\u2014</span> \u640d\u76ca</span>
+  <span><span style="color:#7ab8f5">\u2014</span> \u58f2\u4e0a\uff08\u4e0b\u7aef\u30bc\u30ed\uff09</span>
+  <span><span style="color:${profitColor}">\u2014</span> \u640d\u76ca\uff08\u4e2d\u592e\u30bc\u30ed\uff09</span>
 </div></div>`;
 })();
 return`<div class="screen" style="background:#060812"><div class="month-end-card">
@@ -608,6 +612,7 @@ if(cr)cr.onclick=()=>{
   const trust=cas.clientTrust||3;
   const inc=cas.priceIncreaseCount||0;
   const upRate=Math.max(5,Math.round(({5:0.80,4:0.65,3:0.45,2:0.25,1:0.10}[trust]||0.45-inc*0.15)*100));
+  const addMemberRate=Math.round({5:85,4:70,3:55,2:35,1:20}[trust]||55);
   const totalRev=Math.round((cas.billingCurrent||0)/10000);
   const monthlyProfit=Math.round((cas.billingCurrent-(eng?.salary||0))*0.85/10000);
   const trustPips='●'.repeat(trust)+'○'.repeat(5-trust);
@@ -625,7 +630,7 @@ ${eng?`<div class="ev-portrait">${Portrait.generate(eng)}</div>`:''}
   <button class="ev-choice cr-choice" data-cr="extend" data-months="3">📅 3ヶ月延長（現行単価）</button>
   <button class="ev-choice cr-choice" data-cr="extend" data-months="6">📅 6ヶ月延長（現行単価）</button>
   <button class="ev-choice cr-choice" data-cr="priceUp" data-amount="50000">💰 単価UP +5万/月（成功率${upRate}%）</button>
-  <button class="ev-choice cr-choice" data-cr="addMember">👥 追加メンバー依頼（新案件追加）</button>
+  <button class="ev-choice cr-choice" data-cr="addMember">👥 追加メンバー相談（成功率${addMemberRate}%)</button>
   <button class="ev-choice cr-choice" data-cr="end" style="color:#e94560;opacity:0.8">✕ 契約満了（終了）</button>
 </div></div></div>`;
   document.querySelectorAll('.cr-choice').forEach(btn=>{
