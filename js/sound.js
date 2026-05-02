@@ -36,6 +36,14 @@
   warn()   { this._sweep(440,330,0.2,'triangle',0.1); },
   hover()  { this._tone(600,0.04,'sine',0.04,0.002); },
   roll()    { [0,40,80,120,160].forEach(d=>setTimeout(()=>this._tone(300+Math.random()*200,0.05,'square',0.06),d)); },
+  event_win(){
+    [523,659,784,1047].forEach((f,i)=>setTimeout(()=>this._tone(f,0.18,'sine',0.13),i*70));
+    setTimeout(()=>{this._tone(1047,0.1,'sine',0.16);this._tone(1319,0.25,'sine',0.12,0.01);},300);
+  },
+  event_lose(){
+    [494,440,392,330].forEach((f,i)=>setTimeout(()=>this._tone(f,0.22,'triangle',0.11),i*100));
+    setTimeout(()=>this._sweep(330,180,0.4,'sawtooth',0.1),400);
+  },
   rollEnd(success){ if(success){this._tone(1047,0.1,'sine',0.15,0.01);setTimeout(()=>this._tone(1319,0.2,'sine',0.12,0.01),120);}
                else{this._sweep(400,200,0.3,'sawtooth',0.1);} }
 };

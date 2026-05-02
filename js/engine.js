@@ -881,6 +881,39 @@ class SESGame {
     const cas = ev.targetCase ? st.activeCases.find(c=>c.id===ev.targetCase?.id) : null;
     const eff = choice.effect;
 
+    // ─── 確率計算ヘルパー（ストレス・性格で変動）───
+    const calcRetainProb = (engineer) => {
+      if (!engineer) return 0.65;
+      let base = 0.65;
+      const stress = engineer.stress || 0;
+      const diss   = engineer.dissatisfaction || 0;
+      const p      = engineer.personality || 'easygoing';
+      // ストレス補正
+      if (stress >= 85) base -= 0.35;
+      else if (stress >= 70) base -= 0.22;
+      else if (stress >= 50) base -= 0.10;
+      // 不満補正
+      if (diss >= 80) base -= 0.20;
+      else if (diss >= 60) base -= 0.10;
+      // 性格補正
+      const pBonus = {optimistic:0.15,easygoing:0.10,cautious:0.05,extroverted:0.05,
+                      introverted:-0.05,ambitious:-0.12,passionate:-0.08,perfectionist:-0.05};
+      base += (pBonus[p] || 0);
+      return Math.max(0.05, Math.min(0.95, base));
+    };
+    const calcHeadhuntProb = (engineer) => {
+      if (!engineer) return 0.55;
+      let base = 0.55;
+      const stress = engineer.stress || 0;
+      const p      = engineer.personality || 'easygoing';
+      if (stress >= 80) base -= 0.25;
+      else if (stress >= 60) base -= 0.15;
+      const pBonus = {optimistic:0.12,easygoing:0.10,'stable':0.20,
+                      ambitious:-0.20,passionate:-0.10,extroverted:-0.05};
+      base += (pBonus[p] || 0);
+      return Math.max(0.05, Math.min(0.92, base));
+    };
+
     const endCase = (c) => {
       if (!c) return;
       const e2 = st.engineers.find(e=>e.id===c.assignedEngineerId);
@@ -890,8 +923,32 @@ class SESGame {
 
     switch(eff) {
       // 支払いのみ（エンジニア継続）
-      case 'pay_50000':  st.money -= 50000;  if(eng){eng.salary+=5000; eng.dissatisfaction=Math.max(0,(eng.dissatisfaction||0)-20);} break;
-      case 'pay_80000':  st.money -= 80000;  if(eng){eng.salary+=10000;eng.dissatisfaction=Math.max(0,(eng.dissatisfaction||0)-30);} break;
+            case 'pay_50000': {
+        st.money -= 50000;
+        const prob50 = calcRetainProb(eng);
+        const roll50 = Math.random();
+        if (roll50 < prob50) {
+          if(eng){eng.salary+=5000; eng.dissatisfaction=Math.max(0,(eng.dissatisfaction||0)-20);}
+          ev._lastResult = {success:true, prob:prob50, msg:'\u5f15\u304d\u6b62\u3081\u6210\u529f\uff01'};
+        } else {
+          if(eng) eng.status='gone';
+          ev._lastResult = {success:false, prob:prob50, msg:'\u30b9\u30c8\u30ec\u30b9\u304c\u9ad8\u304f\u7d50\u5c40\u9000\u8077\u3057\u3066\u3057\u307e\u3063\u305f\u2026'};
+        }
+        break;
+      }
+      case 'pay_80000': {
+        st.money -= 80000;
+        const prob80 = calcHeadhuntProb(eng);
+        const roll80 = Math.random();
+        if (roll80 < prob80) {
+          if(eng){eng.salary+=10000; eng.dissatisfaction=Math.max(0,(eng.dissatisfaction||0)-30);}
+          ev._lastResult = {success:true, prob:prob80, msg:'\u6708+1\u4e07\u306e\u6607\u7d66\u3067\u5f15\u304d\u6b62\u3081\u6210\u529f\uff01'};
+        } else {
+          if(eng) eng.status='gone';
+          ev._lastResult = {success:false, prob:prob80, msg:'\u8aac\u5f97\u3067\u304d\u305a\u5225\u4f1a\u793e\u306b\u79fb\u3063\u3066\u3057\u307e\u3063\u305f\u2026'};
+        }
+        break;
+      }
       case 'pay_100000': st.money -= 100000; break;
       case 'pay_200000': st.money -= 200000; if(eng) eng.dissatisfaction=Math.max(0,(eng.dissatisfaction||0)-20); break;
       case 'pay_300000': st.money -= 300000; break;

@@ -922,3 +922,11 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
   animation: pulse-urgent 1.1s ease-in-out infinite;
   border-color: #e94560 !important;
 }
+/* ─── 案件ボード 並び替えバー ─── */
+.case-sort-bar{display:flex;align-items:center;gap:6px;padding:6px 4px 8px;flex-shrink:0;}
+.csb-label{font-size:10px;color:var(--muted);white-space:nowrap;}
+.csb-btn{background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:6px;color:var(--muted);font-size:10px;padding:3px 10px;cursor:pointer;transition:all .2s;}
+.csb-btn.active{background:rgba(58,145,218,.2);border-color:#3a91da;color:#7ab8f5;font-weight:600;}
+.csb-btn:hover:not(.active){background:rgba(255,255,255,.06);}
+/* ─── 採用探索スピナー ─── */
+@keyframes spin { to { transform: rotate(360deg); } }
