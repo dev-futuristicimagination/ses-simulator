@@ -85,7 +85,10 @@ const mkLabels={normal:'通常市場',boom:'🔥 好況期',recession:'📉 不�
 const mkColors={normal:'rgba(255,255,255,0.1)',boom:'rgba(255,100,0,0.2)',recession:'rgba(100,150,255,0.2)'};
 const mkLabel=mkLabels[s.marketCondition||'normal'];
 // ─ 各アクションの成功率計算 ─
-const _tp=game.getTechPower(), _cr=game.getCredibility(), _bp=s.brandPoints||0;
+const _tp=game.getTechPower(), _cr=game.getCredibility(), _bp=s.brandPoints||0, _sp=game.getSalesPower();
+const _salesRate = Math.round((0.50+Math.min(0.35,(_sp-1)*0.05))*100);
+const _cloudRate = Math.round((0.30+Math.min(0.45,_tp*0.05))*100);
+const _trainRate = Math.round((0.60+Math.min(0.30,(5-Math.min(5,_tp*0.3))*0.06))*100);
 const _snsRate  = Math.round((0.25+Math.min(0.4,_bp*0.004))*100);
 const _blogRate = Math.round((0.3 +Math.min(0.5,_tp*0.04))*100);
 const _netRate  = Math.round((0.45+Math.min(0.35,_cr*0.004))*100);
