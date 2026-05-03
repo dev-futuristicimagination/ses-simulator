@@ -427,74 +427,49 @@ class SESGame {
   generateCandidates(channelId) {
     const ch = HIRING_CHANNELS.find(c=>c.id===channelId);
     if (!ch) return;
-    const count = 2 + Math.floor(Math.random()*3);
     const st = this.state;
-    const bp = st.brandPoints || 0;
+    const cred = st.credibility || 0;
 
-    // ダイレクトスカウト・X採用はブランド力で候補者数が変動
-    let actualCount;
+    // チャンネル別の候補者数と成功判定
+    let actualCount = 2;
     if (ch.id === 'direct') {
-      if (bp < 15) {
+      if (cred < (ch.credRequirement||30)) {
         actualCount = 0;
-        this.addLog('bad', `📵 ダイレクトスカウト：ブランド力が低すぎて誰も見てくれません（必要: ブランド15pt以上）`);
-      } else if (bp < 35) { actualCount = 1; }
-      else if (bp < 65) { actualCount = 2; }
-      else { actualCount = 2 + Math.floor(Math.random()*2); }
-    } else if (ch.id === 'x_sns') {
-      if (bp < 10) {
-        actualCount = Math.random() < 0.3 ? 1 : 0;
-        if (actualCount === 0) this.addLog('bad', `📵 X採用：フォロワーが少なく反応なし（SNS投稿でブランド力を上げましょう）`);
-      } else {
-        actualCount = 1 + Math.floor((bp / 100) * 3);
-      }
-    } else {
-      actualCount = count;
+        this.addLog('bad', `📵 ダイレクトスカウト：信用力${cred}ptでは反応がありません（必要: ${ch.credRequirement||30}pt以上）`);
+      } else if (cred < 50) { actualCount = 1; }
+      else if (cred < 70) { actualCount = 1 + (Math.random() < 0.5 ? 1 : 0); }
+      else { actualCount = 2; }
+    } else if (ch.id === 'jobboard') {
+      actualCount = Math.random() < ch.successRate ? 2 + Math.floor(Math.random()*2) : 1;
+    } else if (ch.id === 'agent') {
+      actualCount = Math.random() < ch.successRate ? 2 : 1;
     }
 
-    // Collect skill tags needed by available cases
-    const neededTags = new Set();
-    const neededSkills = new Set();
-    st.availableCases.forEach(c => {
-      (c.requiredTags||[]).forEach(t => neededTags.add(t));
-      neededSkills.add(c.requiredSkill||0);
-    });
+    // スキルレンジに合ったテンプレートを絞り込む
+    const [minSkill, maxSkill] = ch.skillRange || [0, 5];
+    const rangePool = ENGINEER_TEMPLATES.filter(t => t.skill >= minSkill && t.skill <= maxSkill);
+    const bonusPool = rangePool.filter(t => (ch.typeBonus||[]).includes(t.type));
+    const fallbackPool = rangePool.length > 0 ? rangePool : ENGINEER_TEMPLATES;
+    const priorityPool  = bonusPool.length  > 0 ? bonusPool  : fallbackPool;
 
-    // Build pools
-    const allPool = ENGINEER_TEMPLATES.filter(t => t.skill <= ch.quality + 1);
-    const matchPool = allPool.filter(t =>
-      (t.skillTags||[]).some(tag => neededTags.has(tag)) ||
-      neededSkills.has(t.skill)
-    );
-    const workPool = allPool.length > 0 ? allPool : ENGINEER_TEMPLATES;
-    const mPool = matchPool.length > 0 ? matchPool : workPool;
-
-    // Match probability by channel quality: 0→15%, 1→25%, 2→35%, 3→60%, 4→75%, 5→92%
-    // 有料チャンネル(quality>=3)且つ案件ありの場合、スキルマッチ確率を強化
-    const baseMatchBias = [0.15, 0.25, 0.35, 0.60, 0.75, 0.92][Math.min(ch.quality, 5)];
-    const matchBias = (ch.quality >= 3 && neededTags.size > 0 && matchPool.length > 0)
-      ? Math.min(0.95, baseMatchBias + 0.22)
-      : baseMatchBias;
-
-    // Build candidate list with match bias
+    // 候補者を選択（typeBonus優先）70%）
     const selected = [];
     const usedTypes = new Set();
-    for (let i = 0; i < actualCount * 5 && selected.length < actualCount; i++) {
-      const useMatch = Math.random() < matchBias;
-      const pool = useMatch ? mPool : workPool;
+    for (let i = 0; i < actualCount * 6 && selected.length < actualCount; i++) {
+      const pool = Math.random() < 0.70 ? priorityPool : fallbackPool;
       const tpl = pool[Math.floor(Math.random() * pool.length)];
       if (!usedTypes.has(tpl.type) || selected.length < 2) {
         selected.push(tpl);
         usedTypes.add(tpl.type);
       }
     }
-    // actualCount=0（ブランド力不足）の場合は候補者なし
-    if (actualCount > 0 && selected.length === 0) selected.push(workPool[0] || ENGINEER_TEMPLATES[0]);
+    if (actualCount > 0 && selected.length === 0) selected.push(fallbackPool[0] || ENGINEER_TEMPLATES[0]);
 
     const makeCandidate = tpl => {
       const salary = tpl.salaryBase + Math.floor((Math.random()-0.5)*40000);
       const age = (tpl.ageBase||28) + Math.floor((Math.random()-0.5)*4);
-      const pool = tpl.personalityPool || ['easygoing','cautious','optimistic'];
-      const personality = pool[Math.floor(Math.random()*pool.length)];
+      const pool2 = tpl.personalityPool || ['easygoing','cautious','optimistic'];
+      const personality = pool2[Math.floor(Math.random()*pool2.length)];
       return {
         id: this.nextId(), ...tpl,
         name: this.randomName(),
@@ -512,6 +487,8 @@ class SESGame {
     this.state.hiringCandidates = selected.map(makeCandidate);
     this.state.hiringChannel = channelId;
   }
+
+
 
   // offerType: 'full'(希望額) / 'negotiate'(-15%) / 'lowball'(-30%)
   negotiateHire(candidateId, offerType) {

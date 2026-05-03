@@ -235,60 +235,40 @@ return`<div class="cand-card ${c.negotiationResult==='refused'?'refused':''}" da
 return`<div class="modal-overlay"><div class="modal"><h2>候補者を選ぶ</h2><p class="modal-sub">${ch.name||""} · ${ch.cost===0?"無料":"¥"+Math.round((ch.cost||0)/10000)+"万"}</p><div class="cand-list" id="cand-list">${items}</div><div class="modal-foot"><button id="btn-modal-close" class="btn btn-ghost">キャンセル</button><div class="nego-btns" id="nego-btns" style="display:none"><div class="nego-label">💼 給与交渉オプション</div><button id="btn-nego-full" class="btn btn-success nego-btn"><div class="nb-left"><span class="nbi">✓</span><span class="nbt">希望額で採用</span></div><span class="nbp" style="background:rgba(0,212,170,0.2);color:#00d4aa">確率 100%</span></button><button id="btn-nego-mid" class="btn btn-primary nego-btn"><div class="nb-left"><span class="nbi">⚡</span><span class="nbt">交渉する<small> (-15%)</small></span></div><span class="nbp" style="background:rgba(58,145,218,0.2);color:#7ab8f5">🎲 確率 80%</span></button><button id="btn-nego-low" class="btn nego-btn" style="background:rgba(255,165,0,0.1);border:1px solid rgba(255,165,0,0.3);color:#ffa500"><div class="nb-left"><span class="nbi">🎲</span><span class="nbt">低額オファー<small> (-30%)</small></span></div><span class="nbp" style="background:rgba(255,165,0,0.15);color:#ffa500">🎲 確率 40%</span></button></div></div><div id="dice-overlay" style="display:none;position:absolute;inset:0;background:rgba(6,8,18,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;border-radius:16px;z-index:10"><div class="dice-label" id="dice-label">交渉中...</div><div class="dice-num" id="dice-num">??</div><div class="dice-bar-wrap"><div class="dice-bar" id="dice-bar"></div><div class="dice-threshold" id="dice-threshold"></div></div><div class="dice-result" id="dice-result"></div><button id="dice-close" class="btn btn-primary" style="display:none;margin-top:16px">続ける →</button></div></div></div>`;}
 
 const bp=s.brandPoints||0;
-const cred=Math.min(5,s.credibility||1); // 0-5スケール
-const credScale=cred/5; // 0.0-1.0
-
-// チャンネルごとの「無名時base」と「MAX到達率」を定義
-const CH_CRED_SCALE={
-  hellowork:   {min:12, max:28, factor:'free'},
-  indeed:      {min:15, max:38, factor:'free'},
-  x_sns:       {min:0,  max:0,  factor:'brand'},
-  direct:      {min:0,  max:0,  factor:'brand'},
-  linkedin:    {min:12, max:80, factor:'cred'},
-  wantedly:    {min:18, max:68, factor:'cred_brand'},
-  green:       {min:20, max:85, factor:'cred'},
-  doda:        {min:18, max:88, factor:'cred'},
-  agent:       {min:25, max:95, factor:'cred'},
-};
+const cred=s.credibility||0;
 
 const cards=HIRING_CHANNELS.map(ch=>{
-  const cfg=CH_CRED_SCALE[ch.id]||{min:20,max:60,factor:'free'};
-  let dispRate,rateNote='';
-
-  if(cfg.factor==='brand'){
-    // X採用・ダイレクトスカウト: ブランド力連動
-    if(ch.id==='direct'){
-      dispRate=bp<15?8:Math.min(88,12+Math.round((bp/100)*70));
-    } else {
-      dispRate=Math.min(82,10+Math.round((bp/100)*58));
-    }
-    rateNote=`<div style="font-size:10px;color:#7c86a2;margin-top:3px">\uD83D\uDCE3 \u30D6\u30E9\u30F3\u30C9\u529B${bp}pt\u9023\u52D5</div>`;
-
-  } else if(cfg.factor==='cred'){
-    // 有料エージェント系: 信用力が強く影響
-    dispRate=Math.round(cfg.min+(cfg.max-cfg.min)*credScale);
-    const credIcon=cred>=4?'\u2B50':cred>=3?'\uD83D\uDCA1':'\u26A0';
-    rateNote=`<div style="font-size:10px;color:#7c86a2;margin-top:3px">${credIcon} \u4BF6\u7528\u529BLv${cred}\u9023\u52D5\uFF08\u7121\u540D\u6642${cfg.min}%\u2192\u4BF6\u7528\u529B\u9AD8\u3044\u3068${cfg.max}%\uFF09</div>`;
-
-  } else if(cfg.factor==='cred_brand'){
-    // Wantedly系: ブランド+信用力のミックス
-    const brandPart=Math.round((bp/100)*20);
-    const credPart=Math.round((cfg.max-cfg.min)*credScale);
-    dispRate=Math.min(cfg.max, cfg.min+credPart+brandPart);
-    rateNote=`<div style="font-size:10px;color:#7c86a2;margin-top:3px">\uD83D\uDCCA \u4BF6\u7528\u529BLv${cred}+\u30D6\u30E9\u30F3\u30C9${bp}pt</div>`;
-
-  } else {
-    // 無料媒体(HW/Indeed): 小さなブランドボーナスのみ
-    const brandBonus=Math.round((bp/100)*8);
-    dispRate=Math.min(cfg.max, cfg.min+brandBonus);
-    rateNote=`<div style="font-size:10px;color:#7c86a2;margin-top:3px">\uD83D\uDCCB \u8AA4\u52DF\u62C5\u5F53\u8005\u30B9\u30AF\u30EA\u30FC\u30CB\u30F3\u30B0\u3042\u308A</div>`;
+  let dispRate,rateNote='',locked=false;
+  if(ch.id==='direct'){
+    locked=cred<(ch.credRequirement||30);
+    dispRate=locked?0:Math.round(Math.min(85,40+(cred-30)*0.9));
+    rateNote=locked
+      ?'<div style="font-size:10px;color:#e94560;margin-top:3px">⚠ 信用力'+cred+'pt / 必要'+(ch.credRequirement||30)+'pt以上</div>'
+      :'<div style="font-size:10px;color:#7c86a2;margin-top:3px">⭐ 信用力'+cred+'pt連動（高いほど上位層）</div>';
+  }else if(ch.id==='agent'){
+    dispRate=Math.round(ch.successRate*100);
+    rateNote='<div style="font-size:10px;color:#7c86a2;margin-top:3px">🤝 スクリーニング済み・安定見込め</div>';
+  }else{
+    dispRate=Math.round(ch.successRate*100);
+    rateNote='<div style="font-size:10px;color:#7c86a2;margin-top:3px">📋 当たり外れあり・数は多め</div>';
   }
+  const rateColor=dispRate>=70?'#00d4aa':dispRate>=40?'#f7971e':'#e94560';
+  const costStr=ch.cost===0?'✓ 無料':'¥'+Math.round(ch.cost/10000)+'万';
+  const [lo,hi]=ch.skillRange||[0,5];
+  const lvLabels=['Lv0','Lv1','Lv2','Lv3','Lv4','Lv5'];
+  const skillBar=lvLabels.map((l,i)=>'<span style="padding:1px 5px;border-radius:3px;font-size:9px;background:'+(i>=lo&&i<=hi?'rgba(0,212,170,0.25)':'rgba(255,255,255,0.05)')+';color:'+(i>=lo&&i<=hi?'#00d4aa':'#555')+'">'+l+'</span>').join('');
 
-  const rateLabel=dispRate>=75?'\u9AD8':dispRate>=50?'\u4E2D':'\u4F4E';
-  const rateColor=dispRate>=75?'#00d4aa':dispRate>=50?'#f7971e':'#e94560';
-  const rateBar=`<div class="chc-rate-wrap"><div class="chc-rate-label" style="color:${rateColor}">\u5019\u88DC\u8005\u767A\u898B\u7387 <b>${dispRate}%</b> <span class="chc-rate-tag" style="background:${rateColor}22;color:${rateColor};border:1px solid ${rateColor}44;border-radius:4px;padding:1px 5px;font-size:10px">${rateLabel}</span></div><div class="chc-rate-bar-bg"><div class="chc-rate-bar-fill" style="width:${dispRate}%;background:linear-gradient(90deg,${rateColor}88,${rateColor})"></div></div>${rateNote}</div>`;
-  return`<div class="ch-card" data-ch="${ch.id}"><div class="chc-name">${ch.name}</div><div class="chc-cost${ch.cost===0?" free":""}"><${ch.cost===0?"\u2713 \u7121\u6599":"\u00A5"+Math.round(ch.cost/10000)+"\u4E07"}</div><div class="chc-qual">${"\u2605".repeat(ch.quality)}${"\u2606".repeat(5-ch.quality)}</div>${rateBar}<div class="chc-desc">${ch.desc}</div></div>`;
-}).join("");
+  return '<div class="ch-card'+(locked?' ch-locked':'')+'" data-ch="'+ch.id+'" style="'+(locked?'opacity:0.5;pointer-events:none':'')+'">'+
+    '<div class="chc-name">'+ch.name+'</div>'+
+    '<div class="chc-cost'+(ch.cost===0?' free':'')+'">'+costStr+'</div>'+
+    '<div style="margin:6px 0">'+skillBar+'</div>'+
+    '<div style="background:rgba(0,212,170,0.07);border:1px solid rgba(0,212,170,0.2);border-radius:6px;padding:6px 8px;font-size:11px;color:#a0aec0;margin:6px 0">'+(ch.candidateHint||'')+'</div>'+
+    '<div class="chc-rate-wrap"><div class="chc-rate-label" style="color:'+rateColor+'">候補者発見率 <b>'+(locked?'—':dispRate+'%')+'</b></div>'+
+    '<div class="chc-rate-bar-bg"><div class="chc-rate-bar-fill" style="width:'+dispRate+'%;background:linear-gradient(90deg,'+rateColor+'88,'+rateColor+')"></div></div>'+
+    rateNote+'</div>'+
+    '<div class="chc-desc">'+ch.desc+'</div>'+
+    '</div>';
+}).join('');
 
 return`<div class="modal-overlay"><div class="modal modal-wide"><h2>採用チャネルを選ぶ</h2><p class="modal-sub">チャネルで費用と候補者品質が変わります</p><div class="ch-grid">${cards}</div><div class="modal-foot"><button id="btn-modal-close" class="btn btn-ghost">キャンセル</button><button id="btn-ch-next" class="btn btn-primary" disabled>候補者を見る →</button></div></div></div>`;},
 mAssign(game){const s=game.state,cas=s.availableCases.find(c=>c.id===this.selCase);if(!cas)return"";

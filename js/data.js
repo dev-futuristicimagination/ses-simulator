@@ -16,15 +16,42 @@ const FUNDINGS = {
   vc:   { name:'VC/\u30a8\u30f3\u30b8\u30a7\u30eb\u8abf\u9054', icon:'\ud83d\ude80', amount:30000000, monthlyDebt:0,      desc:'3,000\u4e07\u8cc7\u91d1\u3002\u56db\u534a\u671f\u76ee\u6a19\u3042\u308a\u3002', constraint:'quarterly_target' },
   bank: { name:'\u9280\u884c\u878d\u8cc7', icon:'\ud83c\udfe6', amount:10000000, monthlyDebt:277778, desc:'1,000\u4e07\u30013\u5e74\u8fd4\u6e08\uff08\u67088\u4e07\u5186\uff09\u3002', constraint:'monthly_repayment' }
 };const HIRING_CHANNELS = [
-  { id:'hellowork', name:'\u30cf\u30ed\u30fc\u30ef\u30fc\u30af',         cost:0,      successRate:0.18, quality:1, desc:'\u7121\u6599\u3002\u672a\u7d4c\u9a13\u30fb\u7b2c\u4e8c\u65b0\u5352\u304c\u591a\u3044\u3002\u8cea\u306e\u3070\u3089\u3064\u304d\u5927\u3002' },
-  { id:'indeed',    name:'Indeed\u5fdc\u52df',          cost:0,      successRate:0.28, quality:2, desc:'\u7121\u6599\u30022\u301c3\u5e74\u76ee\u4e2d\u5fc3\u3002\u6570\u306f\u96c6\u307e\u308b\u3002' },
-  { id:'x_sns',     name:'X\uff08\u65e7Twitter\uff09\u63a1\u7528',  cost:0,      successRate:0.08, quality:3, desc:'\u7121\u6599\u3002\u30d6\u30e9\u30f3\u30c9\u529b\u306b\u5fdc\u3058\u3066\u5019\u88dc\u8005\u6570\u304c\u5927\u304d\u304f\u5909動\u3002\u5f71響力が高いほど優秀人材が集まる。' },
-  { id:'linkedin',  name:'LinkedIn\u30b9\u30ab\u30a6\u30c8',       cost:50000,  successRate:0.65, quality:4, desc:'\u67085\u4e07\u3002\u30c0\u30a4\u30ec\u30af\u30c8\u30b9\u30ab\u30a6\u30c8\u3002\u5916\u8cc7\u30fb\u4e0a\u7d1a\u8005\u306b\u5f37\u3044\u3002' },
-  { id:'wantedly',  name:'Wantedry',            cost:30000,  successRate:0.60, quality:3, desc:'\u67083\u4e07\u3002\u30d3\u30b8\u30e7\u30f3\u63a1\u7528\u3002\u82e5\u624b\u30a8\u30f3\u30b8\u30cb\u30a2\u306b\u5f37\u3044\u3002' },
-  { id:'green',     name:'Green\uff08IT\u8ee2\u8077\uff09',    cost:300000, successRate:0.80, quality:3, desc:'\u6210\u529f\u5831\u916c30\u4e07\u3002IT\u7279\u5316\u3002\u5373\u6226\u529b\u304c\u6765\u3084\u3059\u3044\u3002' },
-  { id:'direct',    name:'\u30c0\u30a4\u30ec\u30af\u30c8\u30b9\u30ab\u30a6\u30c8',  cost:0,      successRate:0.10, quality:4, desc:'GitHub\u30fbQiita\u3067\u76f4\u63a5\u30b9\u30ab\u30a6\u30c8\u3002\u7121\u6599\u3060\u304c\u30d6\u30e9\u30f3\u30c9\u529b次第で候補者数が大きく変動。' },
-  { id:'doda',      name:'do\u0434a/\u30ea\u30afNavi',    cost:500000, successRate:0.88, quality:4, desc:'\u6210\u529f\u5831\u916c50\u4e07\u3002\u5927\u624b\u5a92\u4f53\u3002\u8cea\u306f\u9ad8\u3044\u3002' },
-  { id:'agent',     name:'\u4eba\u6750\u30a8\u30fc\u30b8\u30a7\u30f3\u30c8',    cost:800000, successRate:0.95, quality:5, desc:'\u6210\u529f\u5831\u916c80\u4e07\u3002\u30d9\u30c6\u30e9\u30f3\u3092\u78ba\u5b9f\u306b\u63a1\u7528\u3002' }
+  {
+    id:'jobboard',
+    name:'📝 求人媒体',
+    cost:0,
+    successRate:0.70,
+    quality:2,
+    desc:'無料。若手・未経験層が多い。当たり外れが大きいがコストゼロ。',
+    candidateHint:'👥 未経験〜Lv2中心。若手多め。戻りが濃いが当たればコストゼロ。',
+    skillRange:[0,2],
+    typeBonus:['novice_hd','novice_sales','inexperienced','tester','junior'],
+    credRequirement:0
+  },
+  {
+    id:'agent',
+    name:'🤝 人材エージェント',
+    cost:300000,
+    successRate:0.90,
+    quality:4,
+    desc:'成功報酬30万。事前スクリーニング済み。安定した中堅層が集まる。',
+    candidateHint:'👨‍💻 Lv2〜Lv3中心。経験済みで安定。成功報酬30万がコスト。',
+    skillRange:[2,3],
+    typeBonus:['junior','junior-hw','mid','tester','sf_engineer','mobile_eng'],
+    credRequirement:0
+  },
+  {
+    id:'direct',
+    name:'🎯 ダイレクトスカウト',
+    cost:80000,
+    successRate:0.40,
+    quality:5,
+    desc:'GitHub・Qiitaで直接アプローチ。信用力50以上で引っ張りやすくなる。',
+    candidateHint:'⭐ Lv3〜Lv5のハイレベル可能。信用力50以上で成功率大幅UP。ブランド力が弱いと居ない。',
+    skillRange:[3,5],
+    typeBonus:['mid','mid-amb','ml_engineer','senior','cloud','security_eng','pm'],
+    credRequirement:30
+  }
 ];
 const ENGINEER_TEMPLATES = [
   { type:'sales_rep', personalityPool:['extroverted','optimistic','easygoing'],    typeName:'営業担当',                skill:0, salaryBase:220000, billingBase:0,       exp:2,  ageBase:28, skillTags:['法人営業','提案書','連絡調整'],           traits:['sales-power','stable'],              salesBonus:2 },
