@@ -1,2 +1,13 @@
 .DS_Store
 Thumbs.db
+
+# ===== セキュリティ: 環境変数ファイル（絶対にコミットしない）=====
+.env
+.env.*
+.env.local
+.env.production
+.env.development
+.env.staging
+.env.test
+!.env.example
+# ================================================================
